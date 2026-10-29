@@ -1,0 +1,7 @@
+# Local environment files with secrets
+.env
+.env.local
+*.secret
+*.pem
+node_modules/
+

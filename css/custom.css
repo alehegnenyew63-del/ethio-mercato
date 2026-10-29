@@ -1,0 +1,210 @@
+/* ==============================================================================
+   ETHIO-MERCATO VIP - MODERN MOBILE-FIRST STYLES
+   ============================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap');
+
+:root {
+  --primary-gold: #f59e0b;
+  --primary-gold-dark: #d97706;
+  --telebirr-blue: #0072bc;
+  --cbe-purple: #6b1480;
+  --abyssinia-amber: #eab308;
+  --ethio-green: #009639;
+  --ethio-yellow: #ffd100;
+  --ethio-red: #da121a;
+  --bg-dark: #0f172a;
+  --card-dark: #1e293b;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', 'Noto Sans Ethiopic', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Mobile Frame Container for Desktop */
+.mobile-app-shell {
+  width: 100%;
+  max-width: 480px;
+  min-height: 100vh;
+  margin: 0 auto;
+  position: relative;
+  background-color: #0b1120;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 640px) {
+  .mobile-app-shell {
+    min-height: 92vh;
+    margin: 24px auto;
+    border-radius: 36px;
+    border: 6px solid #1e293b;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 40px rgba(245, 158, 11, 0.15);
+  }
+}
+
+/* Glassmorphism */
+.glass-panel {
+  background: rgba(30, 41, 59, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-gold {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.05) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* Pulsing Badge */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(245, 158, 11, 0.8);
+  }
+}
+.gold-pulse {
+  animation: pulse-glow 2.5s infinite;
+}
+
+/* Screen Transitions */
+.screen-view {
+  display: none;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+  padding-bottom: 90px; /* Space for bottom nav */
+}
+
+.screen-view.active {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Screen without bottom nav padding */
+.screen-view.no-nav-pad {
+  padding-bottom: 24px;
+}
+
+/* Bottom Navigation Bar */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  background: rgba(15, 23, 42, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  z-index: 40;
+}
+
+@media (min-width: 640px) {
+  .bottom-nav {
+    border-bottom-left-radius: 30px;
+    border-bottom-right-radius: 30px;
+    margin-bottom: 24px;
+    max-width: 468px;
+  }
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 4px;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.nav-item.active {
+  color: #f59e0b;
+}
+
+.nav-item.active svg {
+  transform: translateY(-2px);
+  color: #f59e0b;
+}
+
+/* Telegram Popup Modal */
+.modal-overlay {
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  transition: opacity 0.3s ease;
+}
+
+/* Ripple Button effect */
+.btn-gold {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #000;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+.btn-gold:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+.btn-gold:active {
+  transform: translateY(1px);
+}
+
+/* VIP Badge */
+.vip-badge {
+  background: linear-gradient(135deg, #ffd700 0%, #b8860b 100%);
+  color: #000;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+/* Status Badges */
+.status-pending {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+.status-approved {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+.status-rejected {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+/* Ethiopian Flag Banner */
+.ethio-stripe {
+  height: 4px;
+  background: linear-gradient(90deg, #009639 33.3%, #ffd100 33.3%, #ffd100 66.6%, #da121a 66.6%);
+}
+

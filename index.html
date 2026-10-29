@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="am">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description"
+    content="Ethio-Mercato VIP - Official Daily ROI Investment Platform. Earn guaranteed daily cashback in Ethiopian Birr.">
+  <meta name="theme-color" content="#f59e0b">
+  <title>Ethio-Mercato VIP | ኢትዮ-መርካቶ</title>
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👑</text></svg>">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gold: { DEFAULT: '#f59e0b', dark: '#d97706' }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Supabase JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="bg-[#050811] text-slate-100 min-h-screen antialiased selection:bg-amber-500 selection:text-black">
+
+  <!-- Ambient Background Lighting -->
+  <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+    <div class="absolute -top-40 -left-20 w-96 h-96 bg-amber-500/20 rounded-full blur-[120px]"></div>
+    <div class="absolute top-1/2 -right-20 w-96 h-96 bg-blue-700/15 rounded-full blur-[130px]"></div>
+    <div class="absolute -bottom-40 left-1/4 w-96 h-96 bg-purple-800/15 rounded-full blur-[140px]"></div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- MOBILE APP SHELL                                             -->
+  <!-- ============================================================ -->
+  <main class="mobile-app-shell relative z-10 flex flex-col">
+
+    <!-- Ethiopian Flag Stripe -->
+    <div class="ethio-stripe w-full flex-shrink-0"></div>
+
+    <!-- ── GLOBAL HEADER ────────────────── -->
+    <header id="global-header"
+      class="glass-panel px-4 py-3 flex items-center justify-between border-b border-slate-800 flex-shrink-0">
+      <div class="flex items-center space-x-2.5">
+        <div
+          class="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center font-bold text-[#080d1a] shadow-md text-base gold-pulse">
+          👑
+        </div>
+        <div>
+          <h1 class="text-[11px] font-black tracking-widest text-amber-400 uppercase leading-none">ETHIO-MERCATO</h1>
+          <p class="text-[9px] text-slate-500 font-medium mt-0.5">ኢትዮ-መርካቶ ቪአይፒ ኢንቨስትመንት</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-2">
+        <!-- Live Connection Dot -->
+        <div class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-slate-800/90 border border-slate-700">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span class="text-[10px] text-slate-300 font-medium">Live</span>
+        </div>
+
+        <!-- Header Login Button (shown when not logged in) -->
+        <button id="btn-header-login" onclick="app.navigateTo('screen-auth')"
+          class="px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-500 text-[#080d1a] hover:bg-amber-400 transition shadow">
+          ይግቡ / Login
+        </button>
+      </div>
+    </header>
+
+    <!-- ============================================================ -->
+    <!-- SCREEN 1 — SIGN IN / SIGN UP                                -->
+    <!-- ============================================================ -->
+    <section id="screen-auth" class="screen-view no-nav-pad flex-col justify-center px-6 py-6">
+
+      <!-- Back to Home navigation -->
+      <div class="mb-4">
+        <button onclick="app.navigateTo('screen-home')" class="flex items-center space-x-1.5 text-xs text-slate-400 hover:text-amber-400 transition font-bold py-1.5 px-3 rounded-xl bg-slate-900 border border-slate-800">
+          <span>←</span>
+          <span>ወደ ቤት ተመለስ / Back to Home</span>
+        </button>
+      </div>
+
+      <!-- Brand Logo & Title -->
+      <div class="text-center mb-8">
+        <div
+          class="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-tr from-amber-500 via-yellow-400 to-amber-300 text-[#080d1a] text-4xl shadow-2xl mb-4 gold-pulse">
+          💎
+        </div>
+        <h2 class="text-2xl font-black text-white tracking-tight">ETHIO-MERCATO VIP</h2>
+        <p class="text-xs text-amber-400 font-bold mt-1">ኢትዮ-መርካቶ ቪአይፒ ኢንቨስትመንት መድረክ</p>
+        <p class="text-[11px] text-slate-400 mt-1.5">Official Daily ROI Investment Platform · Ethiopia</p>
+      </div>
+
+      <!-- Auth Card -->
+      <div class="glass-panel rounded-3xl p-6 shadow-2xl border border-slate-800">
+
+        <!-- Login / Register Tabs -->
+        <div class="flex bg-slate-950 p-1.5 rounded-2xl mb-5 border border-slate-800">
+          <button id="tab-login" onclick="app.setAuthTab('login')"
+            class="flex-1 py-2.5 text-xs font-bold rounded-xl text-[#080d1a] bg-amber-500 shadow transition">
+            ይግቡ / Sign In
+          </button>
+          <button id="tab-register" onclick="app.setAuthTab('register')"
+            class="flex-1 py-2.5 text-xs font-bold rounded-xl text-slate-400 hover:text-white transition">
+            ይመዝገቡ / Register
+          </button>
+        </div>
+
+        <!-- Auth Form -->
+        <form id="form-auth" onsubmit="app.handleAuthSubmit(event)" class="space-y-4">
+
+          <!-- Phone Number -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+              ስልክ ቁጥር / Phone Number
+            </label>
+            <div class="relative">
+              <span class="absolute left-3.5 top-3.5 text-[11px] font-black text-amber-500 select-none">🇪🇹 +251</span>
+              <input type="tel" id="auth-phone" required placeholder="0912345678"
+                class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-20 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition font-medium">
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+              የይለፍ ቃል / Password
+            </label>
+            <input type="password" id="auth-password" required placeholder="••••••••" minlength="6"
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition">
+          </div>
+
+          <!-- Invitation Code (registration only) -->
+          <div id="auth-invite-container" class="hidden">
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+              የግብዣ ኮድ / Invitation Code <span class="text-slate-500 font-normal">(አማራጭ)</span>
+            </label>
+            <input type="text" id="auth-invite" placeholder="ለምሳሌ: ETH7ABC"
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white uppercase placeholder-slate-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition font-mono tracking-widest">
+            <p class="text-[10px] text-amber-400 mt-1.5 font-semibold flex items-center space-x-1">
+              <span>🎁</span>
+              <span>አዲስ አባላት 200 ETB ቦነስ ወዲያውኑ ይቀበላሉ!</span>
+            </p>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" id="btn-auth-submit"
+            class="w-full py-4 rounded-xl btn-gold text-sm font-black shadow-xl shadow-amber-500/20 mt-2 tracking-wide">
+            አሁን ይግቡ/ይመዝገቡ
+          </button>
+        </form>
+
+        <!-- Security Notice -->
+        <div class="mt-5 pt-4 border-t border-slate-800/80 flex items-center justify-center space-x-2">
+          <span class="text-[10px] text-slate-500">🔒 256-Bit SSL Secured · ደህንነቱ የተጠበቀ ኢንቨስትመንት መድረክ</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SCREEN 3 — HOME / DASHBOARD                                 -->
+    <!-- ============================================================ -->
+    <section id="screen-home" class="screen-view active px-4 pt-3">
+
+      <!-- Balance & Quick Actions Card -->
+      <div class="glass-gold rounded-3xl p-5 mb-4 relative overflow-hidden shadow-2xl">
+        <div class="absolute -right-4 -bottom-4 w-28 h-28 bg-amber-500/10 rounded-full blur-2xl pointer-events-none">
+        </div>
+        <div class="absolute -left-4 -top-4 w-20 h-20 bg-amber-500/5 rounded-full blur-xl pointer-events-none"></div>
+
+        <div class="flex items-center justify-between mb-1">
+          <p class="text-xs text-slate-300 font-medium">ጠቅላላ ቀሪ ሂሳብ / Total Balance</p>
+          <button onclick="app.refreshUser()" title="Refresh"
+            class="text-slate-500 hover:text-amber-400 transition p-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Balance Display -->
+        <div class="flex items-baseline space-x-2 mb-5">
+          <span id="home-balance-amount" class="text-4xl font-black text-white tracking-tight tabular-nums">0.00</span>
+          <span class="text-base font-extrabold text-amber-400">ETB</span>
+        </div>
+
+        <!-- Deposit & Withdraw Buttons -->
+        <div class="grid grid-cols-2 gap-3">
+          <button onclick="app.navigateTo('screen-deposit-amount')"
+            class="flex items-center justify-center space-x-2 py-3.5 rounded-2xl btn-gold text-xs font-black shadow-lg shadow-amber-500/25 active:scale-95 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+            </svg>
+            <span>አስገባ / Deposit</span>
+          </button>
+
+          <button onclick="app.openWithdrawModal()"
+            class="flex items-center justify-center space-x-2 py-3.5 rounded-2xl bg-slate-800/90 border border-slate-700 text-white font-bold text-xs hover:bg-slate-700 active:scale-95 transition">
+            <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            <span>አውጣ / Withdraw</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Activity Ticker -->
+      <div
+        class="glass-panel rounded-2xl px-3.5 py-2.5 mb-4 flex items-center space-x-2 border border-slate-800 overflow-hidden">
+        <span class="text-amber-400 text-sm flex-shrink-0">📢</span>
+        <p class="text-[11px] text-slate-300 truncate animate-pulse">
+          ተጠቃሚ 091****789 → 3,780 ETB ተቀብሏል · Rolex VIP1 የቀን ገቢ ተከፍሏል!
+        </p>
+      </div>
+
+      <!-- Product Catalog Header -->
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <h3 class="text-sm font-black text-white">VIP ኢንቨስትመንት ፓኬጆች</h3>
+          <p class="text-[10px] text-slate-400">የ 90 ቀናት ዋስትና ያለው የቀን ገቢ ስርዓት</p>
+        </div>
+        <span
+          class="text-[9px] font-black text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-full">90
+          ቀናት</span>
+      </div>
+
+      <!-- VIP Products Catalog (Rendered by app.js) -->
+      <div id="products-catalog-container" class="space-y-4 pb-2">
+        <div class="text-center py-8 text-xs text-slate-500">ፓኬጆችን በመጫን ላይ...</div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SCREEN 5 — MY PRODUCTS                                      -->
+    <!-- ============================================================ -->
+    <section id="screen-my-products" class="screen-view px-4 pt-3">
+
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="text-base font-black text-white">የተገዙ ፓኬጆቼ</h2>
+          <p class="text-[10px] text-amber-400 font-semibold">My Active Products · Daily ROI</p>
+        </div>
+        <button onclick="app.renderPurchases()"
+          class="flex items-center space-x-1 text-[11px] text-slate-400 hover:text-white">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span>አዘምን</span>
+        </button>
+      </div>
+
+      <!-- Summary Cards -->
+      <div class="glass-panel rounded-2xl p-4 mb-4 border border-slate-800 grid grid-cols-2 gap-3 text-center">
+        <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800">
+          <p class="text-[10px] text-slate-400 font-medium">ነቁ ፓኬጆች</p>
+          <p class="text-2xl font-black text-amber-400 mt-0.5" id="summary-active-count">0</p>
+        </div>
+        <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800">
+          <p class="text-[10px] text-slate-400 font-medium">ጠቅላላ የተሰበሰበ</p>
+          <p class="text-2xl font-black text-emerald-400 mt-0.5" id="summary-total-collected">0</p>
+        </div>
+      </div>
+
+      <!-- Purchases List (Rendered by app.js) -->
+      <div id="my-products-list" class="space-y-4">
+        <div class="text-center py-8 text-xs text-slate-500">ፓኬጆችን በመጫን ላይ...</div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SCREEN: INVITE / TEAM                                       -->
+    <!-- ============================================================ -->
+    <section id="screen-invite" class="screen-view px-4 pt-3">
+
+      <!-- Referral Hero Card -->
+      <div class="glass-gold rounded-3xl p-5 mb-5 border border-amber-500/30 text-center relative overflow-hidden">
+        <h2 class="text-base font-black text-white">ቡድን & ሪፈራል ሽልማት</h2>
+        <p class="text-[11px] text-amber-400 font-bold mt-1">10% ፈጣን ኮሚሽን ለእያንዳንዱ የቡድን አባል ግዢ</p>
+        <p class="text-[11px] text-slate-300 mt-2 leading-relaxed">
+          ጓደኞችዎ ፓኬጅ ሲገዙ 10% ቀጥተኛ ኮሚሽን ወደ ሂሳብዎ ይገባል!
+        </p>
+
+        <!-- Referral Code Box -->
+        <div class="mt-4 bg-slate-950 p-4 rounded-2xl border border-slate-800">
+          <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">የእርስዎ ልዩ የግብዣ ኮድ</p>
+          <p id="invite-code-display" class="text-2xl font-mono font-black text-amber-400 tracking-widest my-1">ETH7ABC
+          </p>
+          <div class="grid grid-cols-2 gap-2 mt-3">
+            <button onclick="app.copyReferralCode()" class="py-2.5 rounded-xl btn-gold text-[11px] font-black">
+              📋 ኮድ ኮፒ
+            </button>
+            <button onclick="app.copyReferralLink()"
+              class="py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-[11px] font-bold hover:bg-slate-700 transition">
+              🔗 ሊንክ ኮፒ
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Team Members List -->
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-bold text-white">
+          ቀጥተኛ አባላት (<span id="team-member-count">0</span>)
+        </h3>
+        <span class="text-[10px] text-emerald-400 font-bold">Tier 1 · 10%</span>
+      </div>
+
+      <div id="team-members-list" class="space-y-3">
+        <div class="text-center py-6 text-xs text-slate-500">የቡድን አባላትን በመጫን ላይ...</div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SCREEN 6 — MINE / PROFILE                                   -->
+    <!-- ============================================================ -->
+    <section id="screen-profile" class="screen-view px-4 pt-3">
+
+      <!-- Profile Identity Card -->
+      <div class="glass-panel rounded-3xl p-5 mb-5 border border-slate-800 relative overflow-hidden">
+        <div class="flex items-center space-x-4 mb-4">
+          <div
+            class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center text-2xl font-black shadow-lg text-[#080d1a]">
+            👤
+          </div>
+          <div>
+            <p class="font-black text-white text-base" id="profile-phone">0912345678</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">ID: <span id="profile-uid"
+                class="font-mono text-slate-300">usr-001</span></p>
+            <div class="flex items-center space-x-1.5 mt-1.5">
+              <span class="text-[10px] text-amber-400 font-bold">ኮድ:</span>
+              <span id="profile-refcode"
+                class="text-[11px] font-mono font-black text-white bg-slate-950 px-2 py-0.5 rounded border border-slate-700 tracking-widest">ETH7ABC</span>
+              <button onclick="app.copyReferralCode()"
+                class="text-slate-400 hover:text-amber-400 text-xs transition">📋</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Balance Ledger -->
+        <div class="bg-slate-950/80 rounded-2xl p-4 border border-slate-800 grid grid-cols-3 gap-2 text-center">
+          <div>
+            <p class="text-[9px] text-slate-400 font-medium uppercase tracking-wide">ሂሳብ</p>
+            <p class="text-sm font-black text-white mt-1" id="profile-wallet-bal">0.00</p>
+          </div>
+          <div>
+            <p class="text-[9px] text-slate-400 font-medium uppercase tracking-wide">ጠቅ. ተቀማጭ</p>
+            <p class="text-sm font-black text-amber-400 mt-1" id="profile-recharge-total">0.00</p>
+          </div>
+          <div>
+            <p class="text-[9px] text-slate-400 font-medium uppercase tracking-wide">ጠቅ. ወጪ</p>
+            <p class="text-sm font-black text-emerald-400 mt-1" id="profile-withdraw-total">0.00</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Profile Quick Links -->
+      <div class="glass-panel rounded-2xl border border-slate-800 divide-y divide-slate-800/80 mb-5 overflow-hidden">
+        <button onclick="app.openHistoryModal('deposits')"
+          class="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-slate-800/40 transition">
+          <div class="flex items-center space-x-3">
+            <span class="text-lg">📥</span>
+            <div>
+              <p class="text-xs font-bold text-white">የተቀማጭ ታሪክ / Deposit History</p>
+              <p class="text-[10px] text-slate-400">የቀረቡ ጥያቄዎች እና ሁኔታቸው</p>
+            </div>
+          </div>
+          <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+
+        <button onclick="app.openHistoryModal('withdrawals')"
+          class="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-slate-800/40 transition">
+          <div class="flex items-center space-x-3">
+            <span class="text-lg">📤</span>
+            <div>
+              <p class="text-xs font-bold text-white">የወጪ ታሪክ / Withdrawal History</p>
+              <p class="text-[10px] text-slate-400">ክፍያዎች እና ሁኔታቸው (24ሰ.)</p>
+            </div>
+          </div>
+          <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+
+        <button onclick="app.openTelegramModal()"
+          class="w-full px-4 py-3.5 flex items-center justify-between text-left hover:bg-slate-800/40 transition">
+          <div class="flex items-center space-x-3">
+            <span class="text-lg">✈️</span>
+            <div>
+              <p class="text-xs font-bold text-white">ይፋዊ ቴሌግራም ቻናል</p>
+              <p class="text-[10px] text-blue-400">25,000+ አባላት · ዕለታዊ ጥቅሞች</p>
+            </div>
+          </div>
+          <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+
+      <button onclick="app.logout()"
+        class="w-full py-3.5 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold hover:bg-red-500/20 transition mb-4">
+        ውጣ / Sign Out
+      </button>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SCREENS 7 & 8 — DEPOSIT AMOUNT SELECTION                    -->
+    <!-- ============================================================ -->
+    <section id="screen-deposit-amount" class="screen-view px-4 pt-3">
+
+      <div class="flex items-center space-x-3 mb-5">
+        <button onclick="app.navigateTo('screen-home')"
+          class="p-2.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <div>
+          <h2 class="text-base font-black text-white">ሂሳብ ማስገቢያ / Deposit</h2>
+          <p class="text-[10px] text-slate-400">ደረጃ 1 ከ 2 · መጠን ይምረጡ</p>
+        </div>
+      </div>
+
+      <div class="glass-panel rounded-3xl p-5 mb-5 border border-slate-800">
+        <label class="block text-xs font-bold text-slate-300 mb-2">
+          የተቀማጭ መጠን (ETB) / Deposit Amount
+        </label>
+
+        <!-- Custom Amount Input -->
+        <div class="relative mb-4">
+          <span class="absolute left-4 top-3.5 text-sm font-black text-amber-400 select-none">Br</span>
+          <input type="number" id="deposit-input-amount" min="50" step="50" placeholder="700" value="700"
+            class="w-full bg-slate-950 border border-slate-700 rounded-2xl pl-12 pr-4 py-3.5 text-xl font-black text-white focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition tabular-nums">
+        </div>
+        <p class="text-[10px] text-slate-500 mb-4">ዝቅተኛ የተቀማጭ መጠን: <strong class="text-slate-300">Br 50</strong></p>
+
+        <!-- Quick Preset Buttons (Br 700, 1000, 2000, 5000, 10000, 20000, 40000, 80000, 100000) -->
+        <p class="text-[11px] font-bold text-slate-300 mb-2.5">ፈጣን አማራጮች / Quick Select:</p>
+        <div class="grid grid-cols-3 gap-2">
+          <button onclick="app.selectDepositPreset(700)"
+            class="preset-btn py-2.5 rounded-xl border border-amber-500 bg-amber-500/10 text-amber-400 text-xs font-bold transition">
+            Br 700
+          </button>
+          <button onclick="app.selectDepositPreset(1000)"
+            class="preset-btn py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-slate-300 text-xs font-bold hover:border-slate-500 transition">
+            Br 1,000
+          </button>
+          <button onclick="app.selectDepositPreset(2000)"
+            class="preset-btn py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-slate-300 text-xs font-bold hover:border-slate-500 transition">
+            Br 2,000
+          </button>
+          <button onclick="app.selectDepositPreset(5000)"
+            class="preset-btn py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-slate-300 text-xs font-bold hover:border-slate-500 transition">
+            Br 5,000
+          </button>
+          <button onclick="app.selectDepositPreset(10000)"
+            class="preset-btn py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-slate-300 text-xs font-bold hover:border-slate-500 transition">
+            Br 10,000
+          </button>
+          <button onclick="app.selectDepositPreset(20000)"
+            class="preset-btn py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-slate-300 text-xs font-bold hover:border-slate-500 transition">
+            Br 20,000
+          </button>
+          <button onclick="app.selectDepositPreset(40000)"
+            class="preset-btn py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-slate-300 text-xs font-bold hover:border-slate-500 transition">
+            Br 40,000
+          </button>
+          <button onclick="app.selectDepositPreset(80000)"
+            class="preset-btn py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-slate-300 text-xs font-bold hover:border-slate-500 transition">
+            Br 80,000
+          </button>
+          <button onclick="app.selectDepositPreset(100000)"
+            class="preset-btn py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-slate-300 text-xs font-bold hover:border-slate-500 transition">
+            Br 100,000
+          </button>
+        </div>
+      </div>
+
+      <button onclick="app.proceedToGateway()"
+        class="w-full py-4 rounded-2xl btn-gold text-sm font-black shadow-xl shadow-amber-500/20 flex items-center justify-center space-x-2">
+        <span>ወደ ክፍያ ቀጥል / Proceed to Payment</span>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+        </svg>
+      </button>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SCREEN 9 — PAYMENT GATEWAY & SCREENSHOT UPLOAD             -->
+    <!-- ============================================================ -->
+    <section id="screen-payment-gateway" class="screen-view px-4 pt-3">
+
+      <div class="flex items-center space-x-3 mb-4">
+        <button onclick="app.navigateTo('screen-deposit-amount')"
+          class="p-2.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <div>
+          <h2 class="text-base font-black text-white">የክፍያ ማረጋገጫ / Payment</h2>
+          <p class="text-[10px] text-amber-400">
+            <strong id="gateway-amount-display" class="text-white">700</strong> ETB ያስተላልፉ → ደረሰኝ ያያይዙ
+          </p>
+        </div>
+      </div>
+
+      <!-- Gateway Tabs: Telebirr / CBE / Abyssinia -->
+      <div class="grid grid-cols-3 gap-2 mb-4">
+        <button onclick="app.selectGatewayTab('telebirr')" id="gateway-tab-telebirr"
+          class="py-2.5 px-1 rounded-xl text-[11px] font-black border border-amber-500 bg-amber-500/20 text-amber-300 flex flex-col items-center transition">
+          <span class="text-lg">📱</span>
+          <span>Telebirr</span>
+        </button>
+        <button onclick="app.selectGatewayTab('cbe')" id="gateway-tab-cbe"
+          class="py-2.5 px-1 rounded-xl text-[11px] font-black border border-slate-700 bg-slate-950 text-slate-400 flex flex-col items-center transition">
+          <span class="text-lg">🏛️</span>
+          <span>CBE</span>
+        </button>
+        <button onclick="app.selectGatewayTab('abyssinia')" id="gateway-tab-abyssinia"
+          class="py-2.5 px-1 rounded-xl text-[11px] font-black border border-slate-700 bg-slate-950 text-slate-400 flex flex-col items-center transition">
+          <span class="text-lg">🏦</span>
+          <span>Abyssinia</span>
+        </button>
+      </div>
+
+      <!-- Merchant Account Card (Rendered by app.js) -->
+      <div id="merchant-account-card" class="glass-panel rounded-3xl p-5 mb-4 border border-slate-800">
+        <div class="text-center py-4 text-xs text-slate-500">የክፍያ ዝርዝር በመጫን ላይ...</div>
+      </div>
+
+      <!-- Screenshot Upload Box -->
+      <div class="glass-panel rounded-3xl p-5 mb-5 border border-slate-800">
+        <h3 class="text-xs font-black text-white mb-1 flex items-center space-x-1.5">
+          <span>📸</span>
+          <span>የደረሰኝ ስክሪንሾት ያያይዙ (አስፈላጊ)</span>
+        </h3>
+        <p class="text-[10px] text-slate-400 mb-3">
+          ከፈጸሙት ክፍያ ደረሰኝ ወይም SMS ስክሪንሾት ያስቀምጡ
+        </p>
+
+        <!-- Drop Zone -->
+        <div id="dropzone-screenshot" onclick="document.getElementById('file-screenshot').click()"
+          class="border-2 border-dashed border-slate-700 hover:border-amber-500 rounded-2xl p-5 text-center cursor-pointer transition bg-slate-950/60 flex flex-col items-center justify-center min-h-[140px]">
+
+          <input type="file" id="file-screenshot" accept="image/*" class="hidden"
+            onchange="app.handleScreenshotSelected(event)">
+
+          <div id="upload-placeholder" class="space-y-2">
+            <svg class="w-9 h-9 text-amber-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <p class="text-xs font-bold text-slate-200">ፎቶ ይምረጡ ወይም ያንሱ</p>
+            <p class="text-[10px] text-slate-500">JPG, PNG ፎርማቶች ተቀባይነት አላቸው</p>
+          </div>
+
+          <img id="screenshot-preview" class="hidden w-full max-h-44 object-contain rounded-xl" alt="Receipt preview">
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <button onclick="app.submitDepositForm()" id="btn-submit-deposit"
+        class="w-full py-4 rounded-2xl btn-gold text-sm font-black shadow-xl shadow-amber-500/20 flex items-center justify-center space-x-2 mb-2">
+        <span>ደረሰኙን ለአጽዳቂ ላክ / Submit for Verification</span>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+        </svg>
+      </button>
+      <p class="text-center text-[10px] text-slate-500 mb-2">በ 24 ሰዓት ውስጥ ሂሳብዎ ይሞላል</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- BOTTOM NAVIGATION BAR                                       -->
+    <!-- ============================================================ -->
+    <nav id="global-bottom-nav" class="bottom-nav grid grid-cols-4 px-2 py-1.5">
+      <button onclick="app.navigateTo('screen-home')" class="nav-item active" id="nav-btn-home">
+        <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
+        <span>ቤት</span>
+      </button>
+
+      <button onclick="app.navigateTo('screen-my-products')" class="nav-item" id="nav-btn-products">
+        <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10l8 4" />
+        </svg>
+        <span>ፓኬጆቼ</span>
+      </button>
+
+      <button onclick="app.navigateTo('screen-invite')" class="nav-item" id="nav-btn-invite">
+        <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+        <span>ቡድን</span>
+      </button>
+
+      <button onclick="app.navigateTo('screen-profile')" class="nav-item" id="nav-btn-profile">
+        <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+        <span>መገለጫ</span>
+      </button>
+    </nav>
+
+    <!-- ============================================================ -->
+    <!-- MODAL: SCREEN 2 — TELEGRAM (የቴሌግራም መግለጫ)               -->
+    <!-- ============================================================ -->
+    <div id="modal-telegram" class="fixed inset-0 z-50 flex items-center justify-center p-5 modal-overlay hidden">
+      <div
+        class="glass-panel bg-slate-900/97 max-w-sm w-full rounded-3xl p-6 border border-amber-500/40 shadow-2xl text-center">
+        <div
+          class="w-16 h-16 rounded-full bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-4xl mx-auto mb-4">
+          ✈️
+        </div>
+        <h3 class="text-lg font-black text-white">የቴሌግራም መግለጫ</h3>
+        <p class="text-[11px] text-amber-400 font-bold mt-0.5">ይፋዊ ቴሌግራም ቻናላችን</p>
+
+        <p class="text-xs text-slate-300 mt-3 leading-relaxed">
+          ዕለታዊ ቦነስ ኮዶችን፣ ደንበኞች ካወጡ ተጠቃሚዎች ደረሰኞችን እና ቀጥተኛ 24/7 ደንበኛ አገልግሎትን ለማግኘት ይቀላቀሉ።
+        </p>
+
+        <div
+          class="mt-4 bg-slate-950 rounded-2xl border border-slate-800 p-3.5 text-left space-y-2 text-xs text-slate-300">
+          <div class="flex items-center space-x-2">
+            <span class="text-emerald-400 font-black text-sm">✓</span>
+            <span>ዕለታዊ ቦነስ የቤዛ ኮዶች</span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <span class="text-emerald-400 font-black text-sm">✓</span>
+            <span>ያሉ ደንበኞች የወጪ ደረሰኞች</span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <span class="text-emerald-400 font-black text-sm">✓</span>
+            <span>24/7 ቀጥተኛ ድጋፍ</span>
+          </div>
+        </div>
+
+        <div class="mt-5 space-y-2.5">
+          <a href="https://t.me/EthioMercatoVIP" target="_blank" onclick="app.closeTelegramModal()"
+            class="block w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs shadow-lg shadow-blue-500/25 transition">
+            ቴሌግራምን ይቀላቀሉ (25,000+ አባላት)
+          </a>
+          <button onclick="app.closeTelegramModal()"
+            class="w-full py-2.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white font-bold text-xs transition">
+            OK · ወደ መድረኩ ቀጥሉ
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- MODAL: SCREEN 4 — PURCHASE MODAL (ግዛ / ሰርዝ)             -->
+    <!-- ============================================================ -->
+    <div id="modal-product-detail" class="fixed inset-0 z-50 flex items-center justify-center p-5 modal-overlay hidden">
+      <div
+        class="glass-panel bg-slate-900/97 max-w-sm w-full rounded-3xl p-6 border border-slate-800 shadow-2xl relative">
+        <button onclick="app.closePurchaseModal()"
+          class="absolute right-4 top-4 text-slate-500 hover:text-white p-1.5 rounded-xl hover:bg-slate-800 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        <div id="modal-product-content">
+          <!-- Rendered dynamically by app.js openPurchaseModal() -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- MODAL: WITHDRAWAL                                           -->
+    <!-- ============================================================ -->
+    <div id="modal-withdraw" class="fixed inset-0 z-50 flex items-center justify-center p-5 modal-overlay hidden">
+      <div
+        class="glass-panel bg-slate-900/97 max-w-sm w-full rounded-3xl p-6 border border-slate-800 shadow-2xl relative">
+        <button onclick="app.closeWithdrawModal()"
+          class="absolute right-4 top-4 text-slate-500 hover:text-white p-1.5 rounded-xl hover:bg-slate-800 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        <h3 class="text-base font-black text-white mb-0.5">ገንዘብ ማውጣት / Withdraw</h3>
+        <p class="text-[10px] text-slate-400 mb-4">ጥያቄዎ በ 24 ሰዓት ውስጥ ይከናወናል</p>
+
+        <!-- Business Rule Alert -->
+        <div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3 mb-4 flex items-start space-x-2">
+          <span class="text-amber-400 text-base flex-shrink-0">⚠️</span>
+          <p class="text-[10px] text-amber-300 leading-relaxed">
+            <strong>ሁኔታ:</strong> ቢያንስ 1 ፓኬጅ ከገዙ በኋላ ብቻ ማውጣት ይቻላል። 200 ETB ቦነሱ ብቻውን ሊወጣ አይችልም።
+          </p>
+        </div>
+
+        <form id="form-withdraw" onsubmit="app.handleWithdrawSubmit(event)" class="space-y-3.5">
+          <!-- Available Balance -->
+          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center">
+            <span class="text-[11px] text-slate-400 font-medium">ሊወጣ የሚችል ሂሳብ:</span>
+            <span class="text-sm font-black text-white"><span id="withdraw-available-bal">0.00</span> ETB</span>
+          </div>
+
+          <!-- Amount -->
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1.5">የወጪ መጠን / Amount (ETB)</label>
+            <input type="number" id="withdraw-amount" min="100" step="10" required placeholder="ብር ይጻፉ..."
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm font-black text-white focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition">
+          </div>
+
+          <!-- Payment Channel -->
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1.5">የክፍያ ቻናል / Payment Channel</label>
+            <select id="withdraw-method"
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-amber-500 font-medium">
+              <option value="telebirr">📱 Telebirr (ቴሌብር)</option>
+              <option value="cbe">🏛️ Commercial Bank of Ethiopia (CBE)</option>
+              <option value="abyssinia">🏦 Bank of Abyssinia (አቢሲኒያ)</option>
+            </select>
+          </div>
+
+          <!-- Account Number -->
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1.5">አካውንት / ስልክ ቁጥር</label>
+            <input type="text" id="withdraw-acc-num" required placeholder="09... ወይም የባንክ አካውንት ቁጥር"
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-amber-500 font-mono focus:ring-1 focus:ring-amber-500 transition">
+          </div>
+
+          <button type="submit"
+            class="w-full py-3.5 rounded-xl btn-gold text-xs font-black shadow-lg shadow-amber-500/20 mt-1">
+            አውጣ / Submit Withdrawal Request
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- MODAL: TRANSACTION HISTORY                                   -->
+    <!-- ============================================================ -->
+    <div id="modal-history" class="fixed inset-0 z-50 flex items-center justify-center p-5 modal-overlay hidden">
+      <div
+        class="glass-panel bg-slate-900/97 max-w-sm w-full rounded-3xl border border-slate-800 shadow-2xl relative max-h-[85vh] flex flex-col">
+        <div class="flex items-center justify-between p-5 pb-3 border-b border-slate-800 flex-shrink-0">
+          <h3 class="text-sm font-black text-white" id="history-modal-title">Transaction Records</h3>
+          <button onclick="app.closeHistoryModal()"
+            class="text-slate-500 hover:text-white p-1.5 rounded-xl hover:bg-slate-800 transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div id="history-modal-content" class="overflow-y-auto flex-1 p-5 space-y-3">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- TOAST NOTIFICATION CONTAINER                                -->
+    <!-- ============================================================ -->
+    <div id="toast-container"
+      class="fixed top-5 left-1/2 -translate-x-1/2 z-50 pointer-events-none w-11/12 max-w-sm flex flex-col space-y-2">
+    </div>
+
+  </main><!-- /mobile-app-shell -->
+
+  <!-- ============================================================ -->
+  <!-- SCRIPTS (ORDER MATTERS)                                      -->
+  <!-- ============================================================ -->
+  <script src="supabase.js"></script>
+  <script src="app.js"></script>
+
+</body>
+
+</html>

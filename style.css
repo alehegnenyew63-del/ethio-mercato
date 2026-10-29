@@ -1,0 +1,200 @@
+/* ==============================================================================
+   ETHIO-MERCATO VIP - MOBILE-FIRST STYLES (style.css)
+   ============================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=Noto+Sans+Ethiopic:wght@400;600;700;800&display=swap');
+
+:root {
+  --primary-gold: #f59e0b;
+  --primary-gold-dark: #d97706;
+  --telebirr-blue: #0072bc;
+  --cbe-purple: #6b1480;
+  --abyssinia-amber: #eab308;
+  --ethio-green: #009639;
+  --ethio-yellow: #ffd100;
+  --ethio-red: #da121a;
+  --bg-dark: #080d1a;
+  --card-dark: #131b2e;
+}
+
+/* ─── Reset ─────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #050811;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', 'Noto Sans Ethiopic', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  /* Centre the shell on desktop */
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+/* ─── Mobile App Shell ───────────────────────────────────────────────────── */
+/*
+   KEY LAYOUT RULE:
+   The shell is a FIXED-HEIGHT flex column.
+   • Header   → flex-shrink: 0  (never shrinks)
+   • Screens  → flex: 1         (takes ALL remaining height, scrolls inside)
+   • Bottom nav → flex-shrink: 0 (never shrinks, always pinned at bottom)
+   This eliminates every possible source of top-gap.
+*/
+.mobile-app-shell {
+  width: 100%;
+  max-width: 480px;
+  height: 100dvh;               /* exact viewport height, no overflow */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;             /* clip children; no internal scroll at shell level */
+  position: relative;
+  background-color: #0b1120;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
+}
+
+/* On larger screens show as a centred phone frame */
+@media (min-width: 640px) {
+  body { align-items: center; min-height: 100dvh; }
+  .mobile-app-shell {
+    height: calc(100dvh - 40px);
+    margin: 20px auto;
+    border-radius: 36px;
+    border: 5px solid #1e293b;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 40px rgba(245, 158, 11, 0.15);
+  }
+}
+
+/* ─── Global Header ──────────────────────────────────────────────────────── */
+/* flex-shrink-0 already set inline; always sits flush at the top of the shell */
+#global-header {
+  flex-shrink: 0;
+  /* Remove sticky — it's in flow at the TOP of the flex column, so it never moves */
+  position: relative;
+  z-index: 30;
+}
+
+/* ─── Screen Views ───────────────────────────────────────────────────────── */
+/*
+   Each screen is a SCROLLABLE FLEX CHILD.
+   flex:1 makes it expand to fill all space between the header and the nav.
+   overflow-y:auto gives it its OWN scroll — no parent scroll needed.
+   padding-bottom:80px keeps content above the bottom nav.
+*/
+.screen-view {
+  display: none !important;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  padding-bottom: 80px;       /* clearance for bottom nav */
+  /* No opacity/transform animation — those caused rendering gaps */
+}
+
+.screen-view.active {
+  display: block !important;
+}
+
+#screen-auth.active {
+  display: flex !important;
+}
+
+/* Auth screen needs no bottom-nav clearance */
+.screen-view.no-nav-pad {
+  padding-bottom: 0;
+}
+
+/* ─── Bottom Navigation Bar ──────────────────────────────────────────────── */
+/*
+   No longer position:fixed — it is a flex child at the BOTTOM of the shell.
+   flex-shrink:0 ensures it never collapses.
+*/
+.bottom-nav {
+  flex-shrink: 0;
+  width: 100%;
+  background: rgba(11, 17, 32, 0.98);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  z-index: 40;
+  /* Remove any fixed/absolute positioning */
+  position: relative;
+  left: auto;
+  bottom: auto;
+  transform: none;
+}
+
+/* ─── Nav Items ──────────────────────────────────────────────────────────── */
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 4px;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 600;
+  transition: color 0.2s ease;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.nav-item.active { color: #f59e0b; }
+.nav-item.active svg { transform: translateY(-2px); color: #f59e0b; }
+
+/* ─── Glassmorphism Cards ────────────────────────────────────────────────── */
+.glass-panel {
+  background: rgba(19, 27, 46, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-gold {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.18) 0%, rgba(217, 119, 6, 0.06) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+/* ─── Gold Pulse Animation ───────────────────────────────────────────────── */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 15px rgba(245, 158, 11, 0.4); }
+  50%       { box-shadow: 0 0 28px rgba(245, 158, 11, 0.85); }
+}
+.gold-pulse { animation: pulse-glow 2.5s infinite; }
+
+/* ─── Modal Overlay ──────────────────────────────────────────────────────── */
+.modal-overlay {
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(8px);
+}
+
+/* ─── Buttons ────────────────────────────────────────────────────────────── */
+.btn-gold {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #080d1a;
+  font-weight: 800;
+  transition: filter 0.2s ease, transform 0.1s ease;
+}
+.btn-gold:hover  { filter: brightness(1.1); transform: translateY(-1px); }
+.btn-gold:active { transform: translateY(1px); }
+
+.vip-badge {
+  background: linear-gradient(135deg, #ffd700 0%, #b8860b 100%);
+  color: #080d1a;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+}
+
+/* ─── Ethiopian Flag Stripe ──────────────────────────────────────────────── */
+.ethio-stripe {
+  height: 4px;
+  flex-shrink: 0;
+  background: linear-gradient(90deg, #009639 33.3%, #ffd100 33.3%, #ffd100 66.6%, #da121a 66.6%);
+}
