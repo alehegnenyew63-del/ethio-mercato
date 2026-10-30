@@ -864,7 +864,7 @@ class EthioMercatoApplication {
   }
 
   // ----------------------------------------------------------------------------
-  // WITHDRAWALS (CONDITIONAL LOGIC ENFORCED)
+  // WITHDRAWALS (CONDITIONAL LOGIC ENFORCED: MUST HAVE APPROVED DEPOSIT)
   // ----------------------------------------------------------------------------
   async openWithdrawModal() {
     if (!this.currentUser) {
@@ -872,6 +872,22 @@ class EthioMercatoApplication {
       this.navigateTo('screen-auth');
       return;
     }
+
+    // Real-time status checking from Supabase to verify if user has at least one approved deposit
+    try {
+      const hasApproved = await window.supabaseService.hasApprovedDeposit(this.currentUser.id);
+      if (!hasApproved) {
+        alert("ይቅርታ! ገንዘብ ለማውጣት መጀመሪያ ብር አስገብተው በአድሚን ማስረጋገጥ/ማጽደቅ ይኖርብዎታል።");
+        this.showToast("ይቅርታ! ገንዘብ ለማውጣት መጀመሪያ ብር አስገብተው በአድሚን ማስረጋገጥ/ማጽደቅ ይኖርብዎታል።", 'error');
+        return;
+      }
+    } catch (err) {
+      console.warn("Check approved deposit error:", err);
+      alert("ይቅርታ! ገንዘብ ለማውጣት መጀመሪያ ብር አስገብተው በአድሚን ማስረጋገጥ/ማጽደቅ ይኖርብዎታል።");
+      this.showToast("ይቅርታ! ገንዘብ ለማውጣት መጀመሪያ ብር አስገብተው በአድሚን ማስረጋገጥ/ማጽደቅ ይኖርብዎታል።", 'error');
+      return;
+    }
+
     await this.refreshUser();
 
     const availEl = document.getElementById('withdraw-available-bal');
@@ -909,6 +925,7 @@ class EthioMercatoApplication {
       await this.refreshUser();
       this.openHistoryModal('withdrawals');
     } catch (err) {
+      alert(err.message);
       this.showToast(err.message, 'error');
     }
   }

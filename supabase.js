@@ -295,8 +295,24 @@ class SupabaseService {
   }
 
   // ----------------------------------------------------------------------------
-  // 4. WITHDRAWALS & CONDITIONAL LOGIC (MUST BUY >= 1 PRODUCT)
+  // 4. WITHDRAWALS & CONDITIONAL LOGIC (AT LEAST 1 APPROVED DEPOSIT)
   // ----------------------------------------------------------------------------
+  async hasApprovedDeposit(userId) {
+    if (!userId) return false;
+    const { data, error } = await this.client
+      .from('deposits')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('status', 'approved')
+      .limit(1);
+
+    if (error) {
+      console.warn("Check approved deposits notice:", error);
+      return false;
+    }
+    return Boolean(data && data.length > 0);
+  }
+
   async submitWithdrawal(userId, amount, accountNumber, paymentMethod) {
     const amt = Number(amount);
     if (!amt || amt <= 0) throw new Error("Please enter a valid amount.");
@@ -309,17 +325,11 @@ class SupabaseService {
       throw new Error(`Insufficient funds: Withdrawable balance is ${balance.toFixed(2)} ETB.`);
     }
 
-    // STRICT BUSINESS RULE: Cannot withdraw welcome bonus alone!
-    // Must purchase at least 1 product package first.
-    const { count, error: countErr } = await this.client
-      .from('purchases')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId);
-
-    if (countErr) console.warn("Check purchases notice:", countErr);
-
-    if (!count || count < 1) {
-      throw new Error("Withdrawal Locked: You must purchase at least 1 VIP product package to activate withdrawals. The 200 ETB welcome bonus cannot be withdrawn alone.");
+    // STRICT BUSINESS RULE: Cannot withdraw welcome bonus or any funds without approved deposit!
+    // A user is only permitted to request a withdrawal if they have at least one approved deposit.
+    const approved = await this.hasApprovedDeposit(userId);
+    if (!approved) {
+      throw new Error("ይቅርታ! ገንዘብ ለማውጣት መጀመሪያ ብር አስገብተው በአድሚን ማስረጋገጥ/ማጽደቅ ይኖርብዎታል።");
     }
 
     // Deduct balance immediately
