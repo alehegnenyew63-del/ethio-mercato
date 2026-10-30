@@ -122,7 +122,9 @@ class EthioMercatoApplication {
     this.currentScreen = 'screen-auth';
     this.authMode = 'login';
     this.selectedDepositAmount = 700;
-    this.selectedGateway = 'telebirr';
+    this.paymentAccounts = [];
+    this.selectedGatewayAccount = null;
+    this.selectedGateway = 'Telebirr';
     this.selectedScreenshotFile = null;
     this.selectedScreenshotDataUrl = null;
 
@@ -131,6 +133,10 @@ class EthioMercatoApplication {
 
   async init() {
     console.log("🚀 Ethio-Mercato Application Initialized");
+
+    // Load dynamic payment accounts & setup realtime sync
+    await this.loadPaymentAccounts();
+    this.setupRealtimeListeners();
 
     // Check URL parameters for referral code
     const urlParams = new URLSearchParams(window.location.search);
@@ -221,6 +227,7 @@ class EthioMercatoApplication {
     } else if (screenId === 'screen-invite') {
       this.renderInvite();
     } else if (screenId === 'screen-payment-gateway') {
+      this.renderGatewayTabs();
       this.renderMerchantCard();
     }
   }
@@ -515,6 +522,36 @@ class EthioMercatoApplication {
   // ----------------------------------------------------------------------------
   // SCREEN 5: MY PRODUCTS SCREEN
   // ----------------------------------------------------------------------------
+
+  /**
+   * Calculate the 24-hour cooldown status for a purchase.
+   * Returns { canCollect, remainingMs, remainingText }
+   */
+  getCooldownStatus(purchase) {
+    const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
+
+    if (!purchase.last_collected_at) {
+      return { canCollect: true, remainingMs: 0, remainingText: '' };
+    }
+
+    const lastCollected = new Date(purchase.last_collected_at).getTime();
+    const now = Date.now();
+    const elapsed = now - lastCollected;
+
+    if (elapsed >= TWENTY_FOUR_HOURS_MS) {
+      return { canCollect: true, remainingMs: 0, remainingText: '' };
+    }
+
+    const remainingMs = TWENTY_FOUR_HOURS_MS - elapsed;
+    const hrs = Math.floor(remainingMs / (60 * 60 * 1000));
+    const mins = Math.floor((remainingMs % (60 * 60 * 1000)) / (60 * 1000));
+    const secs = Math.floor((remainingMs % (60 * 1000)) / 1000);
+
+    const remainingText = `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+    return { canCollect: false, remainingMs, remainingText };
+  }
+
   async renderPurchases() {
     if (!this.currentUser) return;
     const container = document.getElementById('my-products-list');
@@ -550,6 +587,40 @@ class EthioMercatoApplication {
         const prod = VIP_PRODUCTS.find(item => item.id === p.product_id) || { title: `VIP Package ${p.product_id}` };
         const daysRemaining = p.days_remaining !== undefined ? p.days_remaining : 90;
 
+        // ─── 24-HOUR COOLDOWN STATUS ───────────────────────────────
+        const cooldown = this.getCooldownStatus(p);
+        let actionButtonHtml = '';
+
+        if (p.status === 'active') {
+          if (cooldown.canCollect) {
+            // Ready to collect — green active button
+            actionButtonHtml = `
+              <button onclick="app.claimDaily('${p.id}')" id="claim-btn-${p.id}"
+                class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black text-xs shadow-md shadow-emerald-600/20 flex items-center justify-center space-x-1.5 transition active:scale-95">
+                <span>🎁</span>
+                <span>የቀን ገቢ ሰብስብ (+${p.daily_return} ETB)</span>
+              </button>
+            `;
+          } else {
+            // Locked — show countdown timer
+            actionButtonHtml = `
+              <div class="w-full py-2.5 rounded-xl bg-slate-800/80 border border-slate-700 text-slate-400 text-xs font-bold flex items-center justify-center space-x-2 cursor-not-allowed select-none"
+                   id="cooldown-display-${p.id}" data-last-collected="${p.last_collected_at}">
+                <svg class="w-4 h-4 text-amber-400 flex-shrink-0 animate-spin" style="animation-duration: 3s;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span>⏳ ቀሪ ጊዜ: <span class="countdown-timer text-amber-400 font-mono" data-purchase-id="${p.id}">${cooldown.remainingText}</span></span>
+              </div>
+              <p class="text-center text-[10px] text-slate-500 mt-1.5">የቀን ገቢ በ 24 ሰዓት ውስጥ አንድ ጊዜ ብቻ ነው</p>
+            `;
+          }
+        } else {
+          actionButtonHtml = `
+            <p class="text-center text-[11px] text-slate-400 font-medium py-1">የ 90 ቀናት ዑደት ተጠናቋል።</p>
+          `;
+        }
+        // ──────────────────────────────────────────────────────────
+
         return `
           <div class="glass-panel rounded-3xl p-4 border border-slate-800 shadow-lg">
             <div class="flex items-center justify-between mb-2">
@@ -574,22 +645,83 @@ class EthioMercatoApplication {
               </div>
             </div>
 
-            ${p.status === 'active' ? `
-              <button onclick="app.claimDaily('${p.id}')" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black text-xs shadow-md shadow-emerald-600/20 flex items-center justify-center space-x-1.5 transition">
-                <span>🎁 የቀን ገቢ ሰብስብ (+${p.daily_return} ETB)</span>
-              </button>
-            ` : `
-              <p class="text-center text-[11px] text-slate-400 font-medium py-1">የ 90 ቀናት ዑደት ተጠናቋል።</p>
-            `}
+            ${actionButtonHtml}
           </div>
         `;
       }).join('');
+
+      // Start the live countdown timers for any locked packages
+      this.startCooldownTimers();
+
     } catch (err) {
       container.innerHTML = `<div class="text-center py-6 text-xs text-red-400">Error: ${err.message}</div>`;
     }
   }
 
+  /**
+   * Start live countdown timers that update every second.
+   * When a timer reaches 0, it auto-refreshes the purchases list to show the collect button.
+   */
+  startCooldownTimers() {
+    // Clear any previous interval
+    if (this._cooldownInterval) {
+      clearInterval(this._cooldownInterval);
+      this._cooldownInterval = null;
+    }
+
+    const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
+
+    this._cooldownInterval = setInterval(() => {
+      const timerElements = document.querySelectorAll('.countdown-timer');
+      if (timerElements.length === 0) {
+        clearInterval(this._cooldownInterval);
+        this._cooldownInterval = null;
+        return;
+      }
+
+      let anyExpired = false;
+
+      timerElements.forEach(el => {
+        const parentDiv = el.closest('[data-last-collected]');
+        if (!parentDiv) return;
+
+        const lastCollectedStr = parentDiv.getAttribute('data-last-collected');
+        if (!lastCollectedStr) return;
+
+        const lastCollected = new Date(lastCollectedStr).getTime();
+        const now = Date.now();
+        const elapsed = now - lastCollected;
+        const remainingMs = TWENTY_FOUR_HOURS_MS - elapsed;
+
+        if (remainingMs <= 0) {
+          anyExpired = true;
+          return;
+        }
+
+        const hrs = Math.floor(remainingMs / (60 * 60 * 1000));
+        const mins = Math.floor((remainingMs % (60 * 60 * 1000)) / (60 * 1000));
+        const secs = Math.floor((remainingMs % (60 * 1000)) / 1000);
+        el.textContent = `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      });
+
+      // If any timer expired, re-render to show the collect button
+      if (anyExpired) {
+        clearInterval(this._cooldownInterval);
+        this._cooldownInterval = null;
+        this.renderPurchases();
+      }
+    }, 1000);
+  }
+
   async claimDaily(purchaseId) {
+    // Disable the button immediately to prevent double-clicks
+    const btn = document.getElementById(`claim-btn-${purchaseId}`);
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = `<span>⏳ እየሰበሰበ ነው...</span>`;
+      btn.classList.add('opacity-60', 'cursor-not-allowed');
+    }
+
     try {
       const res = await window.supabaseService.claimDaily(purchaseId, this.currentUser.id);
       this.showToast(`✅ +${res.daily_return} ETB የቀን ገቢ ወደ ሂሳብዎ ገብቷል!`, 'success');
@@ -597,6 +729,8 @@ class EthioMercatoApplication {
       this.renderPurchases();
     } catch (err) {
       this.showToast(err.message, 'error');
+      // Re-render to restore correct button state
+      this.renderPurchases();
     }
   }
 
@@ -724,68 +858,217 @@ class EthioMercatoApplication {
   }
 
   // ----------------------------------------------------------------------------
-  // SCREEN 9: PAYMENT GATEWAYS & SCREENSHOT UPLOAD
+  // DYNAMIC PAYMENT ACCOUNTS (FETCH, REALTIME SYNC & GATEWAY RENDERING)
   // ----------------------------------------------------------------------------
-  selectGatewayTab(gatewayId) {
-    this.selectedGateway = gatewayId;
+  async loadPaymentAccounts(forceRender = false) {
+    try {
+      const accounts = await window.supabaseService.getPaymentAccounts(true);
+      this.paymentAccounts = accounts || [];
 
-    ['telebirr', 'cbe', 'abyssinia'].forEach(id => {
-      const tab = document.getElementById(`gateway-tab-${id}`);
-      if (!tab) return;
-      if (id === gatewayId) {
-        tab.className = "py-2.5 px-1 rounded-xl text-xs font-bold border border-amber-500 bg-amber-500/20 text-amber-300 transition flex flex-col items-center shadow";
-      } else {
-        tab.className = "py-2.5 px-1 rounded-xl text-xs font-bold border border-slate-700 bg-slate-950 text-slate-400 transition flex flex-col items-center";
+      // Ensure valid selection
+      if (this.paymentAccounts.length > 0) {
+        const found = this.paymentAccounts.find(a => this.selectedGatewayAccount && a.id === this.selectedGatewayAccount.id);
+        if (!found) {
+          this.selectedGatewayAccount = this.paymentAccounts[0];
+          this.selectedGateway = this.selectedGatewayAccount.provider_name;
+        } else {
+          this.selectedGatewayAccount = found;
+          this.selectedGateway = found.provider_name;
+        }
+      }
+
+      this.updateWithdrawalMethodsDropdown();
+
+      if (forceRender || this.currentScreen === 'screen-payment-gateway') {
+        this.renderGatewayTabs();
+        this.renderMerchantCard();
+      }
+    } catch (err) {
+      console.warn("loadPaymentAccounts notice:", err);
+    }
+  }
+
+  setupRealtimeListeners() {
+    if (window.supabaseService?.client) {
+      try {
+        window.supabaseService.client
+          .channel('payment_accounts_user_sync')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'payment_accounts' }, (payload) => {
+            console.log("⚡ [Realtime] Payment accounts updated on server:", payload);
+            this.loadPaymentAccounts(true);
+          })
+          .subscribe();
+      } catch (err) {
+        console.warn("Realtime subscription notice:", err);
+      }
+    }
+
+    // Cross-tab/window storage sync
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'ethio_payment_accounts') {
+        console.log("⚡ [Storage] Payment accounts updated locally across tabs");
+        this.loadPaymentAccounts(true);
       }
     });
+  }
 
+  updateWithdrawalMethodsDropdown() {
+    const select = document.getElementById('withdraw-method');
+    if (!select || !this.paymentAccounts || this.paymentAccounts.length === 0) return;
+
+    const currentVal = select.value;
+    select.innerHTML = this.paymentAccounts.map(acc => {
+      const visuals = window.getProviderVisuals ? window.getProviderVisuals(acc.provider_name) : { icon: '🏦' };
+      return `<option value="${acc.provider_name}">${visuals.icon} ${acc.provider_name}</option>`;
+    }).join('');
+
+    if (currentVal && Array.from(select.options).some(o => o.value === currentVal)) {
+      select.value = currentVal;
+    }
+  }
+
+  // ----------------------------------------------------------------------------
+  // SCREEN 9: DYNAMIC PAYMENT GATEWAYS & SCREENSHOT UPLOAD
+  // ----------------------------------------------------------------------------
+  selectGatewayTab(accountId) {
+    if (!this.paymentAccounts || this.paymentAccounts.length === 0) return;
+
+    const acc = this.paymentAccounts.find(a => String(a.id) === String(accountId)) ||
+                this.paymentAccounts.find(a => a.provider_name.toLowerCase() === String(accountId).toLowerCase());
+
+    if (acc) {
+      this.selectedGatewayAccount = acc;
+      this.selectedGateway = acc.provider_name;
+    }
+
+    this.renderGatewayTabs();
     this.renderMerchantCard();
+  }
+
+  renderGatewayTabs() {
+    const container = document.getElementById('gateway-tabs-container');
+    if (!container) return;
+
+    if (!this.paymentAccounts || this.paymentAccounts.length === 0) {
+      container.innerHTML = `
+        <div class="col-span-3 text-center py-3 text-xs text-slate-400 bg-slate-900/60 rounded-xl border border-slate-800">
+          ምንም ንቁ የክፍያ አማራጭ አልተገኘም
+        </div>
+      `;
+      return;
+    }
+
+    // Adjust grid columns dynamically based on number of active accounts
+    const count = this.paymentAccounts.length;
+    if (count <= 2) {
+      container.className = "grid grid-cols-2 gap-2 mb-4";
+    } else if (count === 3) {
+      container.className = "grid grid-cols-3 gap-2 mb-4";
+    } else {
+      container.className = "grid grid-cols-3 sm:grid-cols-4 gap-2 mb-4";
+    }
+
+    container.innerHTML = this.paymentAccounts.map(acc => {
+      const visuals = window.getProviderVisuals ? window.getProviderVisuals(acc.provider_name) : {
+        icon: '🏦',
+        activeTabClass: 'border-amber-500 bg-amber-500/20 text-amber-300 shadow-lg shadow-amber-500/20',
+        inactiveTabClass: 'border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+      };
+
+      const isSelected = this.selectedGatewayAccount && (
+        String(this.selectedGatewayAccount.id) === String(acc.id) ||
+        this.selectedGatewayAccount.provider_name === acc.provider_name
+      );
+
+      const tabClass = isSelected
+        ? `py-2.5 px-1.5 rounded-xl text-[11px] font-black border ${visuals.activeTabClass} flex flex-col items-center transition transform scale-[1.02] shadow`
+        : `py-2.5 px-1.5 rounded-xl text-[11px] font-medium border ${visuals.inactiveTabClass} flex flex-col items-center transition hover:border-slate-700`;
+
+      // Smart short display name for tab
+      let shortName = acc.provider_name;
+      if (shortName.includes('Commercial Bank')) shortName = 'CBE';
+      else if (shortName.includes('Bank of Abyssinia')) shortName = 'Abyssinia';
+      else if (shortName.length > 12) shortName = shortName.substring(0, 11) + '…';
+
+      return `
+        <button type="button" onclick="app.selectGatewayTab('${acc.id}')" id="gateway-tab-${acc.id}" class="${tabClass}">
+          <span class="text-xl mb-0.5">${visuals.icon}</span>
+          <span class="truncate max-w-full font-bold">${shortName}</span>
+        </button>
+      `;
+    }).join('');
   }
 
   renderMerchantCard() {
     const container = document.getElementById('merchant-account-card');
     if (!container) return;
 
-    const gateway = MERCHANTS[this.selectedGateway];
-    if (!gateway) return;
+    const acc = this.selectedGatewayAccount || (this.paymentAccounts && this.paymentAccounts[0]);
+    if (!acc) {
+      container.innerHTML = `<div class="text-center py-4 text-xs text-slate-500">የክፍያ አካውንት በመጫን ላይ...</div>`;
+      return;
+    }
+
+    const visuals = window.getProviderVisuals ? window.getProviderVisuals(acc.provider_name) : {
+      icon: '🏦',
+      label: 'የሂሳብ ቁጥር (Account Number)',
+      tagColor: 'text-amber-400',
+      badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+    };
 
     container.innerHTML = `
       <div class="flex items-center space-x-3 mb-4">
-        <div class="w-10 h-10 rounded-2xl bg-slate-950 border border-slate-700 flex items-center justify-center text-xl">
-          ${gateway.icon}
+        <div class="w-11 h-11 rounded-2xl bg-slate-950 border border-slate-700 flex items-center justify-center text-2xl shadow-inner">
+          ${visuals.icon}
         </div>
-        <div>
-          <h4 class="text-sm font-black text-white">${gateway.title}</h4>
-          <span class="text-[10px] text-amber-400 font-semibold">የተረጋገጠ ይፋዊ የክፍያ አካውንት</span>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center space-x-2">
+            <h4 class="text-sm font-black text-white truncate">${acc.provider_name}</h4>
+            <span class="text-[9px] px-1.5 py-0.5 rounded ${visuals.badgeClass || 'bg-amber-500/10 text-amber-300 border border-amber-500/20'} font-bold flex-shrink-0">ይፋዊ</span>
+          </div>
+          <span class="text-[10px] text-amber-400 font-semibold flex items-center space-x-1 mt-0.5">
+            <svg class="w-3 h-3 text-emerald-400 inline flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+            <span class="truncate">የተረጋገጠ ይፋዊ የክፍያ አካውንት (Active Gateway)</span>
+          </span>
         </div>
       </div>
 
-      <div class="space-y-3 bg-slate-950 p-4 rounded-2xl border border-slate-800 text-xs">
-        <div class="flex justify-between items-center pb-2 border-b border-slate-800/80">
-          <div>
-            <span class="text-[10px] text-slate-400 block">የስም ባለቤት / Recipient Name</span>
-            <span class="font-extrabold text-white text-sm">${gateway.name}</span>
+      <div class="space-y-3 bg-slate-950 p-4 rounded-2xl border border-slate-800 text-xs shadow-inner">
+        <div class="flex justify-between items-center pb-2.5 border-b border-slate-800/80">
+          <div class="pr-2">
+            <span class="text-[10px] text-slate-400 block font-medium">የስም ባለቤት / Recipient Name</span>
+            <span class="font-extrabold text-white text-sm">${acc.account_holder_name}</span>
           </div>
-          <button onclick="app.copyText('${gateway.name}', 'ስም')" class="text-xs px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 hover:text-white border border-slate-700">
-            Copy
+          <button type="button" onclick="app.copyText('${acc.account_holder_name.replace(/'/g, "\\'")}', 'ስም')"
+            class="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center space-x-1 flex-shrink-0">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+            </svg>
+            <span>Copy</span>
           </button>
         </div>
 
         <div class="flex justify-between items-center pt-1">
-          <div>
-            <span class="text-[10px] text-slate-400 block">${gateway.label}</span>
-            <span class="font-mono font-black text-amber-400 text-base tracking-wider">${gateway.account}</span>
+          <div class="pr-2 min-w-0">
+            <span class="text-[10px] text-slate-400 block font-medium">${visuals.label || 'የሂሳብ ቁጥር (Account Number)'}</span>
+            <span class="font-mono font-black text-amber-400 text-base tracking-wider truncate block">${acc.account_number}</span>
           </div>
-          <button onclick="app.copyText('${gateway.account}', '${gateway.label}')" class="text-xs font-black px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 hover:bg-amber-400 shadow">
-            ቁጥሩን ኮፒ አድርግ
+          <button type="button" onclick="app.copyText('${acc.account_number}', '${visuals.label || 'ቁጥር'}')"
+            class="text-xs font-black px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/20 active:scale-95 transition flex items-center space-x-1.5 flex-shrink-0">
+            <svg class="w-3.5 h-3.5 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
+            </svg>
+            <span>ቁጥሩን ኮፒ አድርግ</span>
           </button>
         </div>
       </div>
 
-      <p class="text-[11px] text-slate-400 mt-3 flex items-start space-x-1.5">
-        <span class="text-amber-400">ℹ️</span>
-        <span>ከላይ በተጠቀሰው አካውንት ትክክለኛውን የብር መጠን ካስተላለፉ በኋላ ደረሰኙን ስክሪንሾት በማድረግ ከስር ያያይዙ።</span>
-      </p>
+      <div class="text-[11px] text-slate-400 mt-3 flex items-start space-x-2 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80">
+        <span class="text-amber-400 text-sm flex-shrink-0">ℹ️</span>
+        <span class="leading-relaxed">በ <strong class="text-white">${acc.provider_name}</strong> ወደ ሂሳብ ቁጥር <strong class="text-amber-300 font-mono">${acc.account_number}</strong> (${acc.account_holder_name}) ትክክለኛውን የብር መጠን ካስተላለፉ በኋላ የደረሰኝ ስክሪንሾት ከስር ያያይዙ።</span>
+      </div>
     `;
   }
 
@@ -837,10 +1120,14 @@ class EthioMercatoApplication {
         screenshotUrl = await window.supabaseService.uploadReceipt(this.selectedScreenshotFile);
       }
 
+      const paymentMethod = this.selectedGatewayAccount
+        ? this.selectedGatewayAccount.provider_name
+        : (this.selectedGateway || 'Telebirr');
+
       await window.supabaseService.submitDeposit(
         this.currentUser.id,
         this.selectedDepositAmount,
-        this.selectedGateway,
+        paymentMethod,
         screenshotUrl
       );
 

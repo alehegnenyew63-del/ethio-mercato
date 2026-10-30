@@ -520,23 +520,21 @@
         </div>
       </div>
 
-      <!-- Gateway Tabs: Telebirr / CBE / Abyssinia -->
-      <div class="grid grid-cols-3 gap-2 mb-4">
-        <button onclick="app.selectGatewayTab('telebirr')" id="gateway-tab-telebirr"
-          class="py-2.5 px-1 rounded-xl text-[11px] font-black border border-amber-500 bg-amber-500/20 text-amber-300 flex flex-col items-center transition">
-          <span class="text-lg">📱</span>
-          <span>Telebirr</span>
-        </button>
-        <button onclick="app.selectGatewayTab('cbe')" id="gateway-tab-cbe"
-          class="py-2.5 px-1 rounded-xl text-[11px] font-black border border-slate-700 bg-slate-950 text-slate-400 flex flex-col items-center transition">
-          <span class="text-lg">🏛️</span>
-          <span>CBE</span>
-        </button>
-        <button onclick="app.selectGatewayTab('abyssinia')" id="gateway-tab-abyssinia"
-          class="py-2.5 px-1 rounded-xl text-[11px] font-black border border-slate-700 bg-slate-950 text-slate-400 flex flex-col items-center transition">
-          <span class="text-lg">🏦</span>
-          <span>Abyssinia</span>
-        </button>
+      <!-- Dynamic Gateway Tabs Container -->
+      <div class="mb-4">
+        <div class="flex items-center justify-between mb-2 px-1">
+          <span class="text-[11px] font-bold text-slate-300 flex items-center space-x-1.5">
+            <span>🏦</span>
+            <span>የክፍያ አማራጭ ይምረጡ / Select Payment Option</span>
+          </span>
+          <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center space-x-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>ቀጥታ የተገናኘ</span>
+          </span>
+        </div>
+        <div id="gateway-tabs-container" class="grid grid-cols-3 gap-2">
+          <!-- Dynamic payment gateway tabs rendered by app.js -->
+        </div>
       </div>
 
       <!-- Merchant Account Card (Rendered by app.js) -->
