@@ -1,57 +1,31 @@
 // ==============================================================================
-// ETHIO-MERCATO VIP - LIVE SUPABASE PRODUCTION SERVICE
+// ETHIO-MERCATO VIP - SUPABASE BACKEND CLIENT
+// ==============================================================================
+// Automated Database Connection (No Frontend Key Inputs Required)
 // ==============================================================================
 
-class SupabaseProductionService {
+const SUPABASE_URL = "https://bwebignuouajdohlqmbw.supabase.co";
+// ⚠️  REQUIRED: Replace PASTE_YOUR_ANON_KEY_HERE with your real anon key.
+// Find it at: Supabase Dashboard → Project Settings → API → anon public key
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3ZWJpZ251b3VhamRvaGxxbWJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyNzc3MzEsImV4cCI6MjEwODg1MzczMX0.sbaN2VJQZUm4ivYfWTZHmE8nUGmCamXsPXYHHTsFxGQ";
+
+class SupabaseService {
   constructor() {
     this.client = null;
-    this.sessionKey = 'ethio_mercato_auth_token';
-    this.storageKey = 'ethio_mercato_client_cache';
     this.init();
   }
 
   init() {
-    const cfg = window.SUPABASE_CONFIG || {};
-    const url = cfg.url || "https://bwebignuouajdohlqmbw.supabase.co";
-    // Check in config or locally saved session key
-    const localKey = localStorage.getItem('supabase_anon_key');
-    const key = (cfg.anonKey && cfg.anonKey.trim()) ? cfg.anonKey.trim() : (localKey || "");
-
-    if (url && key && window.supabase) {
+    if (window.supabase) {
       try {
-        this.client = window.supabase.createClient(url, key, {
-          auth: {
-            persistSession: true,
-            autoRefreshToken: true
-          }
-        });
-        console.log("🟢 Production Supabase Database Connected:", url);
+        this.client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log("🟢 Connected to Supabase Backend:", SUPABASE_URL);
       } catch (err) {
-        console.error("Failed to initialize Supabase client:", err);
+        console.warn("Supabase client initialization notice:", err);
       }
     }
   }
 
-  isReady() {
-    return !!this.client;
-  }
-
-  setAnonKey(key) {
-    if (!key) return false;
-    localStorage.setItem('supabase_anon_key', key.trim());
-    this.init();
-    return this.isReady();
-  }
-
-  ensureReady() {
-    if (!this.client) {
-      throw new Error("Database connection required: Please enter your Supabase 'anon' public key in js/config.js or via the setup prompt.");
-    }
-  }
-
-  // ----------------------------------------------------------------------------
-  // AUTHENTICATION (SCREEN 1)
-  // ----------------------------------------------------------------------------
   generateReferralCode() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let code = 'ET';
@@ -61,104 +35,77 @@ class SupabaseProductionService {
     return code;
   }
 
+  // ----------------------------------------------------------------------------
+  // 1. AUTHENTICATION & AUTOMATIC 200 ETB WELCOME BONUS
+  // ----------------------------------------------------------------------------
   async signUp(phone, password, inviteCode = '') {
-    this.ensureReady();
     const cleanPhone = phone.trim().replace(/\s+/g, '');
-
     if (!cleanPhone || cleanPhone.length < 9) {
-      throw new Error('Please enter a valid Ethiopian mobile phone number.');
+      throw new Error('Please enter a valid Ethiopian phone number.');
     }
     if (!password || password.length < 6) {
       throw new Error('Password must be at least 6 characters.');
     }
 
-    // Check if phone number already exists
-    const { data: existing, error: checkErr } = await this.client
-      .from('profiles')
+    // Check if phone already registered
+    const { data: existing } = await this.client
+      .from('users')
       .select('id')
       .eq('phone', cleanPhone)
       .maybeSingle();
 
-    if (checkErr && checkErr.code !== 'PGRST116') {
-      console.error("Check user error:", checkErr);
-    }
     if (existing) {
-      throw new Error('This phone number is already registered. Please sign in with your password.');
+      throw new Error('This phone number is already registered. Please sign in.');
     }
 
-    // Generate unique referral code
     const myRefCode = this.generateReferralCode();
     const cleanInvite = inviteCode ? inviteCode.trim().toUpperCase() : null;
 
-    // Validate sponsor code if provided
-    let verifiedSponsor = null;
-    if (cleanInvite) {
-      const { data: sponsor } = await this.client
-        .from('profiles')
-        .select('referral_code')
-        .eq('referral_code', cleanInvite)
-        .maybeSingle();
-      if (sponsor) verifiedSponsor = sponsor.referral_code;
-    }
-
-    // Is admin check (official admin phone)
-    const isAdmin = cleanPhone === '0943257056' || cleanPhone === '0912345678';
-
-    const newProfile = {
+    // Automatic 200 ETB welcome bonus stored in database
+    const newUser = {
       phone: cleanPhone,
-      password_hash: password, // In production, stored securely
+      password_hash: password,
+      balance: 200.00, // 200 ETB Welcome Bonus
       referral_code: myRefCode,
-      referred_by: verifiedSponsor,
-      balance: 50.00, // 50 ETB formal welcome bonus
-      bonus_balance: 50.00,
-      total_recharge: 0.00,
+      referred_by: cleanInvite,
+      total_recharged: 0.00,
       total_withdrawn: 0.00,
-      vip_level: 0,
-      is_admin: isAdmin
+      is_admin: cleanPhone === '0943257056' || cleanPhone === '0912345678'
     };
 
-    const { data: created, error: insertErr } = await this.client
-      .from('profiles')
-      .insert([newProfile])
+    const { data, error } = await this.client
+      .from('users')
+      .insert([newUser])
       .select()
       .single();
 
-    if (insertErr) {
-      throw new Error(`Registration failed: ${insertErr.message}`);
-    }
-
-    return created;
+    if (error) throw new Error(error.message);
+    return data;
   }
 
   async signIn(phone, password) {
-    this.ensureReady();
     const cleanPhone = phone.trim().replace(/\s+/g, '');
-
     if (!cleanPhone || !password) {
       throw new Error('Phone number and password are required.');
     }
 
     const { data, error } = await this.client
-      .from('profiles')
+      .from('users')
       .select('*')
       .eq('phone', cleanPhone)
       .eq('password_hash', password)
       .maybeSingle();
 
-    if (error) {
-      throw new Error(`Authentication error: ${error.message}`);
-    }
-    if (!data) {
-      throw new Error('Invalid credentials. Please verify your phone number and password.');
+    if (error || !data) {
+      throw new Error('Invalid phone number or password. Please verify credentials.');
     }
 
     return data;
   }
 
-  async getUserProfile(userId) {
-    this.ensureReady();
+  async getUser(userId) {
     const { data, error } = await this.client
-      .from('profiles')
+      .from('users')
       .select('*')
       .eq('id', userId)
       .single();
@@ -168,83 +115,67 @@ class SupabaseProductionService {
   }
 
   // ----------------------------------------------------------------------------
-  // VIP PACKAGE PURCHASE & CONTRACTS (SCREENS 3, 4, 5)
+  // 2. PRODUCTS & PURCHASES (DAILY ROI LIFECYCLE)
   // ----------------------------------------------------------------------------
+  async getProducts() {
+    const { data, error } = await this.client
+      .from('products')
+      .select('*')
+      .order('price', { ascending: true });
+
+    if (error) {
+      console.warn("Falling back to local catalog:", error);
+      return [];
+    }
+    return data || [];
+  }
+
   async buyProduct(userId, product) {
-    this.ensureReady();
+    // 1. Check user balance
+    const user = await this.getUser(userId);
+    const price = Number(product.price);
+    const balance = Number(user.balance || 0);
 
-    // 1. Fetch current profile
-    const { data: user, error: uErr } = await this.client
-      .from('profiles')
-      .select('balance, vip_level')
-      .eq('id', userId)
-      .single();
-
-    if (uErr) throw new Error(uErr.message);
-
-    const currentBalance = Number(user.balance || 0);
-    const productPrice = Number(product.price);
-
-    if (currentBalance < productPrice) {
-      const shortage = (productPrice - currentBalance).toFixed(2);
-      throw new Error(`Insufficient funds: Package price is ${productPrice.toLocaleString()} ETB. You need ${shortage} ETB more. Please recharge your balance first.`);
+    if (balance < price) {
+      const needed = (price - balance).toFixed(2);
+      throw new Error(`Insufficient balance! Price is ${price.toLocaleString()} ETB, but your balance is ${balance.toFixed(2)} ETB. You need ${needed} ETB more.`);
     }
 
-    const newBalance = Number((currentBalance - productPrice).toFixed(2));
-    const newVip = Math.max(user.vip_level || 0, product.vip_level);
-
-    // 2. Update user profile balance & VIP level
+    // 2. Deduct balance from user
+    const newBal = Number((balance - price).toFixed(2));
     const { error: updErr } = await this.client
-      .from('profiles')
-      .update({
-        balance: newBalance,
-        vip_level: newVip,
-        updated_at: new Date().toISOString()
-      })
+      .from('users')
+      .update({ balance: newBal, updated_at: new Date().toISOString() })
       .eq('id', userId);
 
-    if (updErr) throw new Error(`Transaction failed: ${updErr.message}`);
+    if (updErr) throw new Error(updErr.message);
 
-    // 3. Create active investment contract
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + (product.period_days || 90));
-
-    const contractData = {
+    // 3. Insert purchase record
+    const purchaseRecord = {
       user_id: userId,
       product_id: product.id,
-      product_name: product.name,
-      purchase_price: productPrice,
-      daily_income: Number(product.daily_income),
-      period_days: product.period_days || 90,
-      days_elapsed: 0,
-      total_accumulated: 0.00,
-      last_collected_at: new Date().toISOString(),
-      expires_at: expiresAt.toISOString(),
+      price: price,
+      daily_return: Number(product.daily_return),
+      days_remaining: product.duration_days || 90,
+      total_earned: 0.00,
       status: 'active'
     };
 
-    const { data: contract, error: cErr } = await this.client
-      .from('user_products')
-      .insert([contractData])
+    const { data: purchase, error: pErr } = await this.client
+      .from('purchases')
+      .insert([purchaseRecord])
       .select()
       .single();
 
-    if (cErr) {
-      console.error("Contract creation error:", cErr);
-    }
+    if (pErr) console.warn("Purchase insert note:", pErr);
 
-    return {
-      success: true,
-      contract,
-      newBalance
-    };
+    return { success: true, purchase, newBalance: newBal };
   }
 
-  async getUserProducts(userId) {
-    this.ensureReady();
+  async getPurchases(userId) {
     const { data, error } = await this.client
-      .from('user_products')
-      .select('*')
+      .from('purchases')
+      .select('*, products(title, image_url)')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
@@ -252,86 +183,64 @@ class SupabaseProductionService {
     return data || [];
   }
 
-  async claimDailyProfit(userId, contractId) {
-    this.ensureReady();
-
-    // 1. Fetch contract
-    const { data: contract, error: cErr } = await this.client
-      .from('user_products')
+  async claimDaily(purchaseId, userId) {
+    const { data: purchase, error: pErr } = await this.client
+      .from('purchases')
       .select('*')
-      .eq('id', contractId)
+      .eq('id', purchaseId)
       .eq('user_id', userId)
       .single();
 
-    if (cErr || !contract) throw new Error("Contract record not found.");
-    if (contract.status !== 'active') throw new Error("This contract has completed its 90-day cycle.");
+    if (pErr || !purchase) throw new Error("Purchase contract not found.");
+    if (purchase.status !== 'active') throw new Error("Contract cycle has already ended.");
 
-    // Check last collected date to ensure 1 claim per calendar day
-    const lastCollected = new Date(contract.last_collected_at || contract.created_at);
-    const now = new Date();
-    const diffHours = (now - lastCollected) / (1000 * 60 * 60);
+    const newDays = Math.max(0, (purchase.days_remaining || 90) - 1);
+    const newTotal = Number((Number(purchase.total_earned || 0) + Number(purchase.daily_return)).toFixed(2));
+    const newStatus = newDays <= 0 ? 'completed' : 'active';
 
-    // Update contract
-    const newDays = (contract.days_elapsed || 0) + 1;
-    const newAccumulated = Number((Number(contract.total_accumulated || 0) + Number(contract.daily_income)).toFixed(2));
-    const newStatus = newDays >= contract.period_days ? 'completed' : 'active';
-
-    const { error: updErr } = await this.client
-      .from('user_products')
+    // Update purchase record
+    await this.client
+      .from('purchases')
       .update({
-        days_elapsed: newDays,
-        total_accumulated: newAccumulated,
-        last_collected_at: now.toISOString(),
+        days_remaining: newDays,
+        total_earned: newTotal,
+        last_collected_at: new Date().toISOString(),
         status: newStatus
       })
-      .eq('id', contractId);
-
-    if (updErr) throw new Error(updErr.message);
+      .eq('id', purchaseId);
 
     // Credit user balance
-    const { data: user } = await this.client
-      .from('profiles')
-      .select('balance')
-      .eq('id', userId)
-      .single();
-
-    const updatedBal = Number((Number(user.balance || 0) + Number(contract.daily_income)).toFixed(2));
+    const user = await this.getUser(userId);
+    const newBal = Number((Number(user.balance || 0) + Number(purchase.daily_return)).toFixed(2));
 
     await this.client
-      .from('profiles')
-      .update({
-        balance: updatedBal,
-        updated_at: now.toISOString()
-      })
+      .from('users')
+      .update({ balance: newBal, updated_at: new Date().toISOString() })
       .eq('id', userId);
 
     return {
       success: true,
-      claimed_amount: contract.daily_income,
-      new_balance: updatedBal,
-      message: `Successfully claimed +${contract.daily_income} ETB daily profit!`
+      daily_return: purchase.daily_return,
+      new_balance: newBal,
+      days_remaining: newDays
     };
   }
 
   // ----------------------------------------------------------------------------
-  // DEPOSITS & RECEIPT VERIFICATION (SCREENS 7, 8, 9)
+  // 3. DEPOSITS & RECEIPT SCREENSHOT STORAGE
   // ----------------------------------------------------------------------------
-  async uploadReceiptImage(file) {
-    this.ensureReady();
+  async uploadReceipt(file) {
     if (!file) throw new Error("Please select a screenshot file.");
 
     const ext = file.name ? file.name.split('.').pop() : 'jpg';
     const filePath = `receipts/${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
 
-    const { data: uploadData, error: uploadErr } = await this.client.storage
+    const { data, error } = await this.client.storage
       .from('deposit-receipts')
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: false
-      });
+      .upload(filePath, file, { cacheControl: '3600', upsert: false });
 
-    if (uploadErr) {
-      console.warn("Direct storage upload failed, converting to Base64 data URL:", uploadErr);
+    if (error) {
+      console.warn("Storage upload notice, falling back to base64:", error);
       return await this.fileToBase64(file);
     }
 
@@ -351,25 +260,17 @@ class SupabaseProductionService {
     });
   }
 
-  async submitDeposit({ userId, amount, paymentMethod, merchantName, merchantAccount, transactionRef, screenshotUrl }) {
-    this.ensureReady();
+  async submitDeposit(userId, amount, paymentMethod, screenshotUrl) {
     const amt = Number(amount);
-    if (!amt || amt < 50) {
-      throw new Error('Minimum deposit amount is 50 ETB.');
-    }
-    if (!screenshotUrl) {
-      throw new Error('Screenshot receipt is mandatory for payment verification.');
-    }
+    if (!amt || amt < 50) throw new Error("Minimum deposit is 50 ETB.");
+    if (!screenshotUrl) throw new Error("Payment receipt screenshot is required.");
 
     const depositPayload = {
       user_id: userId,
       amount: amt,
       payment_method: paymentMethod,
-      merchant_name: merchantName,
-      merchant_account: merchantAccount,
-      transaction_ref: transactionRef || 'TX-' + Date.now(),
       screenshot_url: screenshotUrl,
-      status: 'pending'
+      status: 'pending' // Manual admin verification
     };
 
     const { data, error } = await this.client
@@ -378,15 +279,11 @@ class SupabaseProductionService {
       .select()
       .single();
 
-    if (error) {
-      throw new Error(`Deposit submission failed: ${error.message}`);
-    }
-
+    if (error) throw new Error(error.message);
     return data;
   }
 
-  async getUserDeposits(userId) {
-    this.ensureReady();
+  async getDeposits(userId) {
     const { data, error } = await this.client
       .from('deposits')
       .select('*')
@@ -398,82 +295,70 @@ class SupabaseProductionService {
   }
 
   // ----------------------------------------------------------------------------
-  // WITHDRAWALS (STRICT BUSINESS RULE VALIDATION)
+  // 4. WITHDRAWALS & CONDITIONAL LOGIC (AT LEAST 1 APPROVED DEPOSIT)
   // ----------------------------------------------------------------------------
-  async submitWithdrawal({ userId, amount, paymentMethod, accountNumber, accountHolderName }) {
-    this.ensureReady();
+  async hasApprovedDeposit(userId) {
+    if (!userId) return false;
+    const { data, error } = await this.client
+      .from('deposits')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('status', 'approved')
+      .limit(1);
+
+    if (error) {
+      console.warn("Check approved deposits notice:", error);
+      return false;
+    }
+    return Boolean(data && data.length > 0);
+  }
+
+  async submitWithdrawal(userId, amount, accountNumber, paymentMethod) {
     const amt = Number(amount);
+    if (!amt || amt <= 0) throw new Error("Please enter a valid amount.");
+    if (!accountNumber) throw new Error("Account number is required.");
 
-    if (!amt || amt <= 0) {
-      throw new Error('Please enter a valid withdrawal amount.');
-    }
-    if (!accountNumber || !accountHolderName) {
-      throw new Error('Account number and account holder name are strictly required.');
-    }
-
-    // 1. Check user balance
-    const { data: user, error: uErr } = await this.client
-      .from('profiles')
-      .select('balance')
-      .eq('id', userId)
-      .single();
-
-    if (uErr) throw new Error(uErr.message);
+    // Check available balance
+    const user = await this.getUser(userId);
     const balance = Number(user.balance || 0);
-
     if (balance < amt) {
       throw new Error(`Insufficient funds: Withdrawable balance is ${balance.toFixed(2)} ETB.`);
     }
 
-    // 2. STRICT BUSINESS RULE: Must have purchased at least one product
-    const { count, error: countErr } = await this.client
-      .from('user_products')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId);
-
-    if (countErr) console.warn("Product count query warning:", countErr);
-
-    if (!count || count < 1) {
-      throw new Error("Withdrawal condition: You must purchase at least 1 VIP product package to activate withdrawal capabilities. Initial bonuses cannot be withdrawn directly.");
+    // STRICT BUSINESS RULE: Cannot withdraw welcome bonus or any funds without approved deposit!
+    // A user is only permitted to request a withdrawal if they have at least one approved deposit.
+    const approved = await this.hasApprovedDeposit(userId);
+    if (!approved) {
+      throw new Error("ይቅርታ! ገንዘብ ለማውጣት መጀመሪያ ብር አስገብተው በአድሚን ማስረጋገጥ/ማጽደቅ ይኖርብዎታል።");
     }
 
-    // 3. Deduct balance from user profile
+    // Deduct balance immediately
     const newBal = Number((balance - amt).toFixed(2));
     await this.client
-      .from('profiles')
-      .update({
-        balance: newBal,
-        updated_at: new Date().toISOString()
-      })
+      .from('users')
+      .update({ balance: newBal, updated_at: new Date().toISOString() })
       .eq('id', userId);
 
-    // 4. Insert withdrawal request with pending status
+    // Insert withdrawal with pending status for 24h manual verification
     const withdrawalPayload = {
       user_id: userId,
       amount: amt,
-      payment_method: paymentMethod,
       account_number: accountNumber,
-      account_holder_name: accountHolderName,
+      payment_method: paymentMethod,
       status: 'pending'
     };
 
-    const { data: withdrawal, error: wErr } = await this.client
+    const { data, error } = await this.client
       .from('withdrawals')
       .insert([withdrawalPayload])
       .select()
       .single();
 
-    if (wErr) throw new Error(`Withdrawal request error: ${wErr.message}`);
-
-    return {
-      success: true,
-      withdrawal,
-      newBalance: newBal
-    };
+    if (error) throw new Error(error.message);
+    return { success: true, withdrawal: data, newBalance: newBal };
   }
 
-  async getUserWithdrawals(userId) {
-    this.ensureReady();
+  async getWithdrawals(userId) {
     const { data, error } = await this.client
       .from('withdrawals')
       .select('*')
@@ -485,146 +370,90 @@ class SupabaseProductionService {
   }
 
   // ----------------------------------------------------------------------------
-  // TEAM & REFERRAL TRACKING
+  // 5. REFERRAL NETWORK
   // ----------------------------------------------------------------------------
-  async getTeamMembers(userId, referralCode) {
-    this.ensureReady();
+  async getTeamMembers(referralCode) {
     if (!referralCode) return [];
-
-    const { data: team, error } = await this.client
-      .from('profiles')
-      .select('id, phone, vip_level, created_at, total_recharge')
+    const { data, error } = await this.client
+      .from('users')
+      .select('id, phone, balance, created_at')
       .eq('referred_by', referralCode)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.warn("Could not query team:", error);
-      return [];
-    }
-
-    return (team || []).map(m => ({
-      id: m.id,
-      phone: m.phone ? m.phone.replace(/(\d{3})\d{4}(\d{3})/, '$1****$2') : 'Private',
-      vip_level: m.vip_level || 0,
-      total_recharge: m.total_recharge || 0,
-      created_at: m.created_at
+    if (error) return [];
+    return (data || []).map(u => ({
+      id: u.id,
+      phone: u.phone.replace(/(\d{3})\d{4}(\d{3})/, '$1****$2'),
+      created_at: u.created_at
     }));
   }
 
   // ----------------------------------------------------------------------------
-  // ADMIN PANEL DATA & APPROVAL ACTIONS
+  // 6. ADMIN OPERATIONS (24H MANUAL PAYOUT & DEPOSIT VERIFICATION)
   // ----------------------------------------------------------------------------
   async getAllDeposits() {
-    this.ensureReady();
     const { data, error } = await this.client
       .from('deposits')
-      .select('*, profiles(phone)')
+      .select('*, users(phone)')
       .order('created_at', { ascending: false });
 
     if (error) throw new Error(error.message);
     return (data || []).map(d => ({
       ...d,
-      user_phone: d.profiles ? d.profiles.phone : 'User ' + d.user_id.substring(0, 8)
+      user_phone: d.users?.phone || d.user_id.substring(0, 8)
     }));
   }
 
   async getAllWithdrawals() {
-    this.ensureReady();
     const { data, error } = await this.client
       .from('withdrawals')
-      .select('*, profiles(phone)')
+      .select('*, users(phone)')
       .order('created_at', { ascending: false });
 
     if (error) throw new Error(error.message);
     return (data || []).map(w => ({
       ...w,
-      user_phone: w.profiles ? w.profiles.phone : 'User ' + w.user_id.substring(0, 8)
+      user_phone: w.users?.phone || w.user_id.substring(0, 8)
     }));
   }
 
   async approveDeposit(depositId) {
-    this.ensureReady();
-
-    // 1. Fetch deposit
     const { data: dep, error: dErr } = await this.client
       .from('deposits')
       .select('*')
       .eq('id', depositId)
       .single();
 
-    if (dErr || !dep) throw new Error("Deposit record not found.");
+    if (dErr || !dep) throw new Error("Deposit not found.");
     if (dep.status !== 'pending') throw new Error(`Deposit already marked as ${dep.status}.`);
 
-    // 2. Update deposit status
+    // Update deposit status
     await this.client
       .from('deposits')
-      .update({
-        status: 'approved',
-        reviewed_at: new Date().toISOString()
-      })
+      .update({ status: 'approved' })
       .eq('id', depositId);
 
-    // 3. Credit user's wallet
-    const { data: user } = await this.client
-      .from('profiles')
-      .select('balance, total_recharge, referred_by')
-      .eq('id', dep.user_id)
-      .single();
+    // Credit user balance
+    const user = await this.getUser(dep.user_id);
+    const newBal = Number((Number(user.balance || 0) + Number(dep.amount)).toFixed(2));
+    const newRecharge = Number((Number(user.total_recharged || 0) + Number(dep.amount)).toFixed(2));
 
-    if (user) {
-      const newBal = Number((Number(user.balance || 0) + Number(dep.amount)).toFixed(2));
-      const newRecharge = Number((Number(user.total_recharge || 0) + Number(dep.amount)).toFixed(2));
+    await this.client
+      .from('users')
+      .update({
+        balance: newBal,
+        total_recharged: newRecharge,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', dep.user_id);
 
-      await this.client
-        .from('profiles')
-        .update({
-          balance: newBal,
-          total_recharge: newRecharge,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', dep.user_id);
-
-      // Process 10% referral commission for sponsor
-      if (user.referred_by) {
-        const { data: sponsor } = await this.client
-          .from('profiles')
-          .select('id, balance')
-          .eq('referral_code', user.referred_by)
-          .maybeSingle();
-
-        if (sponsor) {
-          const comm = Number((Number(dep.amount) * 0.10).toFixed(2));
-          await this.client
-            .from('profiles')
-            .update({
-              balance: Number((Number(sponsor.balance || 0) + comm).toFixed(2))
-            })
-            .eq('id', sponsor.id);
-
-          await this.client
-            .from('referrals')
-            .insert([{
-              referrer_id: sponsor.id,
-              referred_user_id: dep.user_id,
-              tier_level: 1,
-              bonus_earned: comm
-            }]);
-        }
-      }
-    }
-
-    return { success: true, message: "Deposit approved and balance credited." };
+    return { success: true };
   }
 
-  async rejectDeposit(depositId, reason = 'Payment verification rejected') {
-    this.ensureReady();
+  async rejectDeposit(depositId) {
     const { error } = await this.client
       .from('deposits')
-      .update({
-        status: 'rejected',
-        admin_notes: reason,
-        reviewed_at: new Date().toISOString()
-      })
+      .update({ status: 'rejected' })
       .eq('id', depositId);
 
     if (error) throw new Error(error.message);
@@ -632,21 +461,16 @@ class SupabaseProductionService {
   }
 
   async approveWithdrawal(withdrawalId) {
-    this.ensureReady();
     const { error } = await this.client
       .from('withdrawals')
-      .update({
-        status: 'approved',
-        reviewed_at: new Date().toISOString()
-      })
+      .update({ status: 'approved' })
       .eq('id', withdrawalId);
 
     if (error) throw new Error(error.message);
     return { success: true };
   }
 
-  async rejectWithdrawal(withdrawalId, reason = 'Account details mismatched') {
-    this.ensureReady();
+  async rejectWithdrawal(withdrawalId) {
     const { data: wd } = await this.client
       .from('withdrawals')
       .select('*')
@@ -654,28 +478,17 @@ class SupabaseProductionService {
       .single();
 
     if (wd && wd.status === 'pending') {
-      // Refund user balance
-      const { data: user } = await this.client
-        .from('profiles')
-        .select('balance')
-        .eq('id', wd.user_id)
-        .single();
-
-      if (user) {
-        const refundedBal = Number((Number(user.balance || 0) + Number(wd.amount)).toFixed(2));
-        await this.client
-          .from('profiles')
-          .update({ balance: refundedBal })
-          .eq('id', wd.user_id);
-      }
+      // Refund balance
+      const user = await this.getUser(wd.user_id);
+      const refunded = Number((Number(user.balance || 0) + Number(wd.amount)).toFixed(2));
+      await this.client
+        .from('users')
+        .update({ balance: refunded })
+        .eq('id', wd.user_id);
 
       await this.client
         .from('withdrawals')
-        .update({
-          status: 'rejected',
-          admin_notes: reason,
-          reviewed_at: new Date().toISOString()
-        })
+        .update({ status: 'rejected' })
         .eq('id', withdrawalId);
     }
 
@@ -683,5 +496,5 @@ class SupabaseProductionService {
   }
 }
 
-// Global production service instance
-window.dataService = new SupabaseProductionService();
+window.supabaseService = new SupabaseService();
+

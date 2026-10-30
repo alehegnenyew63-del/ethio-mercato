@@ -1,8 +1,122 @@
 // ==============================================================================
-// ETHIO-MERCATO VIP - PRODUCTION CONTROLLER
+// ETHIO-MERCATO VIP - APPLICATION CONTROLLER (app.js)
 // ==============================================================================
 
-class EthioMercatoApp {
+const VIP_PRODUCTS = [
+  {
+    id: 1,
+    title: "Rolex Submariner VIP1",
+    amharic: "ሮሌክስ ሳብማሪነር ቪአይፒ 1",
+    price: 700,
+    daily_return: 42,
+    total_return: 3780,
+    duration_days: 90,
+    badge: "Popular",
+    image_url: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=600&auto=format&fit=crop&q=80"
+  },
+  {
+    id: 2,
+    title: "Rolex Datejust VIP2",
+    amharic: "ሮሌክስ ዴትጀስት ቪአይፒ 2",
+    price: 1200,
+    daily_return: 78,
+    total_return: 7020,
+    duration_days: 90,
+    badge: "Hot 🔥",
+    image_url: "https://images.unsplash.com/photo-1547996160-71dfabbce5d7?w=600&auto=format&fit=crop&q=80"
+  },
+  {
+    id: 3,
+    title: "Rolex Oyster VIP3",
+    amharic: "ሮሌክስ ኦይስተር ቪአይፒ 3",
+    price: 2500,
+    daily_return: 175,
+    total_return: 15750,
+    duration_days: 90,
+    badge: "High Yield",
+    image_url: "https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=600&auto=format&fit=crop&q=80"
+  },
+  {
+    id: 4,
+    title: "Rolex GMT-Master VIP4",
+    amharic: "ሮሌክስ ጂኤምቲ-ማስተር ቪአይፒ 4",
+    price: 5000,
+    daily_return: 375,
+    total_return: 33750,
+    duration_days: 90,
+    badge: "Super Return",
+    image_url: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80"
+  },
+  {
+    id: 5,
+    title: "Rolex Daytona VIP5",
+    amharic: "ሮሌክስ ዴይቶና ቪአይፒ 5",
+    price: 10000,
+    daily_return: 800,
+    total_return: 72000,
+    duration_days: 90,
+    badge: "VIP High",
+    image_url: "https://images.unsplash.com/photo-1508057198894-247b23fe5ade?w=600&auto=format&fit=crop&q=80"
+  },
+  {
+    id: 6,
+    title: "Rolex Sky-Dweller VIP6",
+    amharic: "ሮሌክስ ስካይ-ድዌለር ቪአይፒ 6",
+    price: 20000,
+    daily_return: 1700,
+    total_return: 153000,
+    duration_days: 90,
+    badge: "Premium",
+    image_url: "https://images.unsplash.com/photo-1539874754764-5a96559165b0?w=600&auto=format&fit=crop&q=80"
+  },
+  {
+    id: 7,
+    title: "Rolex Day-Date Gold VIP7",
+    amharic: "ሮሌክስ ጎልድ ፕሬዝደንት ቪአይፒ 7",
+    price: 40000,
+    daily_return: 3600,
+    total_return: 324000,
+    duration_days: 90,
+    badge: "Ultimate Crown",
+    image_url: "https://images.unsplash.com/photo-1614164185128-e4ec99c436d7?w=600&auto=format&fit=crop&q=80"
+  }
+];
+
+// Presets for Screens 7 & 8: Br 700, Br 1000, Br 2000, Br 5000, Br 10000, Br 20000, Br 40000, Br 80000, Br 100000
+const DEPOSIT_PRESETS = [700, 1000, 2000, 5000, 10000, 20000, 40000, 80000, 100000];
+
+// Official merchant accounts for Screen 9
+const MERCHANTS = {
+  telebirr: {
+    id: "telebirr",
+    title: "Telebirr Wallet (ቴሌብር)",
+    name: "Shibabew",
+    account: "0943257056",
+    label: "Phone Number (ስልክ ቁጥር)",
+    icon: "📱",
+    color: "#0072bc"
+  },
+  cbe: {
+    id: "cbe",
+    title: "Commercial Bank of Ethiopia (CBE / ንግድ ባንክ)",
+    name: "Alehegn",
+    account: "1000331894994",
+    label: "Account Number (የሂሳብ ቁጥር)",
+    icon: "🏛️",
+    color: "#6b1480"
+  },
+  abyssinia: {
+    id: "abyssinia",
+    title: "Bank of Abyssinia (አቢሲኒያ ባንክ)",
+    name: "Alehegn",
+    account: "157312097",
+    label: "Account Number (የሂሳብ ቁጥር)",
+    icon: "🏦",
+    color: "#f59e0b"
+  }
+};
+
+class EthioMercatoApplication {
   constructor() {
     this.currentUser = null;
     this.currentScreen = 'screen-auth';
@@ -11,101 +125,57 @@ class EthioMercatoApp {
     this.selectedGateway = 'telebirr';
     this.selectedScreenshotFile = null;
     this.selectedScreenshotDataUrl = null;
-    this.adminTab = 'deposits';
 
     document.addEventListener('DOMContentLoaded', () => this.init());
   }
 
   async init() {
-    console.log("💎 Ethio-Mercato VIP Platform initializing...");
+    console.log("🚀 Ethio-Mercato Application Initialized");
 
-    // Check database connection status
-    this.updateConnectionStatus();
+    // Check URL parameters for referral code
+    const urlParams = new URLSearchParams(window.location.search);
+    const ref = urlParams.get('ref');
+    if (ref) {
+      const inviteInput = document.getElementById('auth-invite');
+      if (inviteInput) inviteInput.value = ref.trim().toUpperCase();
+      this.setAuthTab('register');
+      this.showToast(`🎁 Referral code ${ref} applied! 200 ETB bonus awaits you.`, 'info');
+      this.navigateTo('screen-auth');
+      return;
+    }
 
-    // Check URL referral code (?ref=ETH777)
-    this.checkReferralParam();
-
-    // Check active session
-    const savedUserId = localStorage.getItem('ethio_mercato_auth_user_id');
-    if (savedUserId && window.dataService.isReady()) {
+    // Check active saved session
+    const savedUserId = localStorage.getItem('ethio_mercato_uid');
+    if (savedUserId) {
       try {
-        const user = await window.dataService.getUserProfile(savedUserId);
+        const user = await window.supabaseService.getUser(savedUserId);
         if (user) {
           this.currentUser = user;
           this.onLoginSuccess(false);
           return;
         }
-      } catch (err) {
-        console.warn("Session resume notice:", err);
+      } catch (e) {
+        console.warn("Session resume notice:", e);
       }
     }
 
-    // Default to screen-auth
-    this.navigateTo('screen-auth');
-  }
-
-  updateConnectionStatus() {
-    const dot = document.getElementById('connection-dot');
-    const text = document.getElementById('connection-text');
-    if (!dot || !text) return;
-
-    if (window.dataService && window.dataService.isReady()) {
-      dot.className = "w-2 h-2 rounded-full bg-emerald-400";
-      text.textContent = "Live Database";
-    } else {
-      dot.className = "w-2 h-2 rounded-full bg-amber-400 animate-pulse";
-      text.textContent = "Setup Required";
-    }
-  }
-
-  checkConnectionOrPrompt() {
-    if (!window.dataService || !window.dataService.isReady()) {
-      document.getElementById('modal-db-setup').classList.remove('hidden');
-    } else {
-      this.showToast("🟢 Connected to Live Supabase Production Database", "success");
-    }
-  }
-
-  handleSaveAnonKey(event) {
-    event.preventDefault();
-    const keyInput = document.getElementById('setup-anon-key');
-    const key = keyInput ? keyInput.value.trim() : '';
-
-    if (!key) {
-      this.showToast("Please enter your Supabase 'anon' public key.", "error");
-      return;
-    }
-
-    const success = window.dataService.setAnonKey(key);
-    if (success) {
-      document.getElementById('modal-db-setup').classList.add('hidden');
-      this.updateConnectionStatus();
-      this.showToast("🟢 Database successfully connected!", "success");
-    } else {
-      this.showToast("Could not connect. Please verify your anon key.", "error");
-    }
-  }
-
-  // ----------------------------------------------------------------------------
-  // REFERRAL CODE AUTO-FILL
-  // ----------------------------------------------------------------------------
-  checkReferralParam() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const ref = urlParams.get('ref');
-    if (ref) {
-      const inviteInput = document.getElementById('auth-invite');
-      if (inviteInput) {
-        inviteInput.value = ref.trim().toUpperCase();
-      }
-      this.setAuthTab('register');
-      this.showToast(`🎁 Referral code ${ref} applied! Register to get your 50 ETB welcome bonus.`, 'info');
-    }
+    // Default landing: Home Dashboard with products catalog (auth screen is hidden)
+    this.updateUserUI();
+    this.navigateTo('screen-home');
   }
 
   // ----------------------------------------------------------------------------
   // NAVIGATION CONTROLLER
   // ----------------------------------------------------------------------------
   navigateTo(screenId) {
+    // Auth-guard for private screens
+    const authProtectedScreens = ['screen-my-products', 'screen-profile', 'screen-deposit-amount', 'screen-payment-gateway'];
+    if (authProtectedScreens.includes(screenId) && !this.currentUser) {
+      this.showToast('እባክዎ መጀመሪያ ይግቡ / Please sign in first', 'info');
+      this.navigateTo('screen-auth');
+      return;
+    }
+
     const screens = document.querySelectorAll('.screen-view');
     screens.forEach(s => s.classList.remove('active'));
 
@@ -120,13 +190,14 @@ class EthioMercatoApp {
     const globalHeader = document.getElementById('global-header');
 
     if (screenId === 'screen-auth') {
-      bottomNav.classList.add('hidden');
-      globalHeader.classList.add('hidden');
+      if (bottomNav) bottomNav.classList.add('hidden');
+      if (globalHeader) globalHeader.classList.add('hidden');
     } else {
-      bottomNav.classList.remove('hidden');
-      globalHeader.classList.remove('hidden');
+      if (bottomNav) bottomNav.classList.remove('hidden');
+      if (globalHeader) globalHeader.classList.remove('hidden');
     }
 
+    // Active Tab button state
     const navMapping = {
       'screen-home': 'nav-btn-home',
       'screen-my-products': 'nav-btn-products',
@@ -141,49 +212,44 @@ class EthioMercatoApp {
     }
 
     if (screenId === 'screen-home') {
-      this.renderProductsCatalog();
-      this.refreshUserData();
+      this.renderCatalog();
+      this.refreshUser();
     } else if (screenId === 'screen-my-products') {
-      this.refreshMyProducts();
+      this.renderPurchases();
     } else if (screenId === 'screen-profile') {
-      this.renderProfileScreen();
+      this.renderProfile();
     } else if (screenId === 'screen-invite') {
-      this.renderInviteScreen();
+      this.renderInvite();
     } else if (screenId === 'screen-payment-gateway') {
       this.renderMerchantCard();
     }
   }
 
   // ----------------------------------------------------------------------------
-  // AUTHENTICATION (SCREEN 1)
+  // SCREEN 1: AUTHENTICATION
   // ----------------------------------------------------------------------------
-  setAuthTab(tab) {
-    this.authMode = tab;
+  setAuthTab(mode) {
+    this.authMode = mode;
     const tabLogin = document.getElementById('tab-login');
     const tabRegister = document.getElementById('tab-register');
-    const inviteContainer = document.getElementById('auth-invite-container');
+    const inviteBox = document.getElementById('auth-invite-container');
     const submitBtn = document.getElementById('btn-auth-submit');
 
-    if (tab === 'login') {
+    if (mode === 'login') {
       tabLogin.className = "flex-1 py-2.5 text-xs font-bold rounded-xl transition text-slate-950 bg-amber-500 shadow";
       tabRegister.className = "flex-1 py-2.5 text-xs font-bold rounded-xl transition text-slate-400 hover:text-white";
-      inviteContainer.classList.add('hidden');
-      submitBtn.textContent = "Sign In / ግባ";
+      inviteBox.classList.add('hidden');
+      submitBtn.textContent = "አሁን ይግቡ/ይመዝገቡ";
     } else {
       tabRegister.className = "flex-1 py-2.5 text-xs font-bold rounded-xl transition text-slate-950 bg-amber-500 shadow";
       tabLogin.className = "flex-1 py-2.5 text-xs font-bold rounded-xl transition text-slate-400 hover:text-white";
-      inviteContainer.classList.remove('hidden');
-      submitBtn.textContent = "Create Account / ተመዝገብ (+50 ETB Bonus)";
+      inviteBox.classList.remove('hidden');
+      submitBtn.textContent = "አሁን ይግቡ/ይመዝገቡ (+200 ETB Bonus)";
     }
   }
 
   async handleAuthSubmit(event) {
     event.preventDefault();
-    if (!window.dataService.isReady()) {
-      document.getElementById('modal-db-setup').classList.remove('hidden');
-      return;
-    }
-
     const phoneInput = document.getElementById('auth-phone');
     const passwordInput = document.getElementById('auth-password');
     const inviteInput = document.getElementById('auth-invite');
@@ -193,36 +259,37 @@ class EthioMercatoApp {
     const password = passwordInput.value;
     const inviteCode = inviteInput ? inviteInput.value.trim() : '';
 
-    const origText = submitBtn.textContent;
+    const orig = submitBtn.textContent;
     submitBtn.disabled = true;
-    submitBtn.textContent = "Verifying with server...";
+    submitBtn.textContent = "በማረጋገጥ ላይ...";
 
     try {
       let user;
       if (this.authMode === 'login') {
-        user = await window.dataService.signIn(phone, password);
-        this.showToast(`Welcome back, ${user.phone}!`, 'success');
+        user = await window.supabaseService.signIn(phone, password);
+        this.showToast(`እንኳን ደህና መጡ, ${user.phone}!`, 'success');
       } else {
-        user = await window.dataService.signUp(phone, password, inviteCode);
-        this.showToast(`🎉 Registration successful! 50 ETB welcome bonus credited.`, 'success');
+        user = await window.supabaseService.signUp(phone, password, inviteCode);
+        this.showToast(`🎉 እንኳን ደስ አለዎት! 200 ETB የቦነስ ሂሳብ ገብቷል።`, 'success');
       }
 
       this.currentUser = user;
-      localStorage.setItem('ethio_mercato_auth_user_id', user.id);
+      localStorage.setItem('ethio_mercato_uid', user.id);
       this.onLoginSuccess(true);
     } catch (err) {
       this.showToast(err.message, 'error');
     } finally {
       submitBtn.disabled = false;
-      submitBtn.textContent = origText;
+      submitBtn.textContent = orig;
     }
   }
 
-  onLoginSuccess(showTelegramPopup = true) {
-    this.updateUserHeaderUI();
+  onLoginSuccess(showTelegramModal = true) {
+    this.updateUserUI();
     this.navigateTo('screen-home');
 
-    if (showTelegramPopup) {
+    // SCREEN 2: Automatic Telegram Popup Modal upon login
+    if (showTelegramModal) {
       setTimeout(() => {
         this.openTelegramModal();
       }, 400);
@@ -231,78 +298,83 @@ class EthioMercatoApp {
 
   logout() {
     this.currentUser = null;
-    localStorage.removeItem('ethio_mercato_auth_user_id');
-    this.showToast("Signed out successfully.", "info");
-    this.navigateTo('screen-auth');
+    localStorage.removeItem('ethio_mercato_uid');
+    this.updateUserUI();
+    this.showToast("በተሳካ ሁኔታ ወጥተዋል።", "info");
+    this.navigateTo('screen-home');
   }
 
-  // ----------------------------------------------------------------------------
-  // USER BALANCE & HEADER REFRESH
-  // ----------------------------------------------------------------------------
-  async refreshUserData() {
-    if (!this.currentUser || !window.dataService.isReady()) return;
-    try {
-      const freshUser = await window.dataService.getUserProfile(this.currentUser.id);
-      if (freshUser) {
-        this.currentUser = freshUser;
-        this.updateUserHeaderUI();
-      }
-    } catch (err) {
-      console.warn("User refresh notice:", err);
-    }
-  }
-
-  updateUserHeaderUI() {
+  async refreshUser() {
     if (!this.currentUser) return;
-
-    const balEl = document.getElementById('home-balance-amount');
-    const vipEl = document.getElementById('home-vip-badge');
-    if (balEl) balEl.textContent = Number(this.currentUser.balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    if (vipEl) vipEl.textContent = `VIP ${this.currentUser.vip_level || 0}`;
-
-    const adminPill = document.getElementById('btn-admin-pill');
-    if (adminPill) {
-      if (this.currentUser.is_admin) {
-        adminPill.classList.remove('hidden');
-      } else {
-        adminPill.classList.add('hidden');
+    try {
+      const fresh = await window.supabaseService.getUser(this.currentUser.id);
+      if (fresh) {
+        this.currentUser = fresh;
+        this.updateUserUI();
       }
+    } catch (e) {
+      console.warn("Refresh user notice:", e);
     }
   }
 
+  updateUserUI() {
+    const balEl = document.getElementById('home-balance-amount');
+    const loginBtn = document.getElementById('btn-header-login');
+
+    if (!this.currentUser) {
+      if (balEl) balEl.textContent = '0.00';
+      if (loginBtn) loginBtn.classList.remove('hidden');
+      return;
+    }
+
+    if (loginBtn) loginBtn.classList.add('hidden');
+    if (balEl) balEl.textContent = Number(this.currentUser.balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
   // ----------------------------------------------------------------------------
-  // SCREEN 3: HOME PRODUCT CATALOG
+  // SCREEN 2: TELEGRAM MODAL (የቴሌግራም መግለጫ)
   // ----------------------------------------------------------------------------
-  renderProductsCatalog() {
+  openTelegramModal() {
+    document.getElementById('modal-telegram').classList.remove('hidden');
+  }
+
+  closeTelegramModal() {
+    document.getElementById('modal-telegram').classList.add('hidden');
+  }
+
+  // ----------------------------------------------------------------------------
+  // SCREEN 3: HOME / DASHBOARD & PRODUCT CATALOG
+  // ----------------------------------------------------------------------------
+  renderCatalog() {
     const container = document.getElementById('products-catalog-container');
     if (!container) return;
 
-    container.innerHTML = PRODUCTS_DATA.map(item => `
+    container.innerHTML = VIP_PRODUCTS.map(item => `
       <div class="glass-panel rounded-3xl p-4 border border-slate-800 hover:border-amber-500/50 transition relative overflow-hidden group shadow-lg">
-        <span class="absolute top-3 right-3 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+        <span class="absolute top-3 right-3 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
           ${item.badge}
         </span>
 
         <div class="flex items-center space-x-3.5">
           <div class="w-20 h-20 rounded-2xl overflow-hidden bg-slate-950 flex-shrink-0 border border-slate-800 relative shadow-inner">
-            <img src="${item.image_url}" alt="${item.name}" class="w-full h-full object-cover group-hover:scale-110 transition duration-300">
+            <img src="${item.image_url}" alt="${item.title}" class="w-full h-full object-cover group-hover:scale-110 transition duration-300">
             <span class="absolute bottom-1 left-1 bg-black/80 text-amber-400 font-black text-[9px] px-1.5 py-0.2 rounded">
-              VIP ${item.vip_level}
+              VIP ${item.id}
             </span>
           </div>
 
           <div class="flex-1 min-w-0">
-            <h4 class="text-sm font-bold text-white truncate">${item.name}</h4>
-            <p class="text-[11px] text-amber-400 font-medium truncate">${item.amharic_name}</p>
+            <h4 class="text-sm font-black text-white truncate">${item.title}</h4>
+            <p class="text-[11px] text-amber-400 font-semibold truncate">${item.amharic}</p>
 
             <div class="grid grid-cols-2 gap-2 mt-2 text-[11px] bg-slate-950/70 p-2 rounded-xl border border-slate-800">
               <div>
-                <p class="text-slate-400 text-[10px]">Price / ዋጋ</p>
-                <p class="font-extrabold text-white">${item.price.toLocaleString()} ETB</p>
+                <p class="text-slate-400 text-[10px]">ዋጋ / Price</p>
+                <p class="font-black text-white">${item.price.toLocaleString()} ETB</p>
               </div>
               <div>
-                <p class="text-slate-400 text-[10px]">Daily Return / በቀን</p>
-                <p class="font-extrabold text-emerald-400">+${item.daily_income} ETB</p>
+                <p class="text-slate-400 text-[10px]">የቀን ገቢ / Daily</p>
+                <p class="font-black text-emerald-400">+${item.daily_return} ETB</p>
               </div>
             </div>
           </div>
@@ -310,12 +382,13 @@ class EthioMercatoApp {
 
         <div class="mt-3.5 pt-3 border-t border-slate-800/80 flex items-center justify-between">
           <div class="text-[10px] text-slate-400">
-            <span>Cycle: <strong class="text-slate-200">90 Days</strong></span> • 
-            <span>Total: <strong class="text-amber-400">${item.total_return.toLocaleString()} ETB</strong></span>
+            <span>ጊዜ: <strong class="text-slate-200">${item.duration_days} ቀናት</strong></span> • 
+            <span>ጠቅላላ: <strong class="text-amber-400">${item.total_return.toLocaleString()} ETB</strong></span>
           </div>
 
-          <button onclick="app.openProductDetail(${item.id})" class="px-4 py-2 rounded-xl btn-gold text-xs font-bold shadow-md shadow-amber-500/10">
-            Buy Package / ይግዙ
+          <!-- Screen 4 trigger button -->
+          <button onclick="app.openPurchaseModal(${item.id})" class="px-4 py-2 rounded-xl btn-gold text-xs font-black shadow-md shadow-amber-500/10">
+            ግዛ
           </button>
         </div>
       </div>
@@ -323,10 +396,10 @@ class EthioMercatoApp {
   }
 
   // ----------------------------------------------------------------------------
-  // SCREEN 4: PRODUCT DETAIL / PURCHASE MODAL
+  // SCREEN 4: PURCHASE MODAL ("ግዛ" & "ሰርዝ")
   // ----------------------------------------------------------------------------
-  openProductDetail(productId) {
-    const product = PRODUCTS_DATA.find(p => p.id === productId);
+  openPurchaseModal(productId) {
+    const product = VIP_PRODUCTS.find(p => p.id === productId);
     if (!product) return;
 
     const userBal = Number(this.currentUser ? this.currentUser.balance : 0);
@@ -335,51 +408,74 @@ class EthioMercatoApp {
     const modalContent = document.getElementById('modal-product-content');
     modalContent.innerHTML = `
       <div class="text-center mb-4">
-        <div class="w-24 h-24 rounded-3xl overflow-hidden mx-auto mb-3 border-2 border-amber-500 shadow-xl relative">
+        <div class="w-20 h-20 rounded-3xl overflow-hidden mx-auto mb-2.5 border-2 border-amber-500 shadow-xl relative">
           <img src="${product.image_url}" class="w-full h-full object-cover">
           <span class="absolute bottom-1 right-1 bg-amber-500 text-slate-950 font-black text-[9px] px-2 py-0.5 rounded-full">
-            VIP ${product.vip_level}
+            VIP ${product.id}
           </span>
         </div>
-        <h3 class="text-base font-extrabold text-white">${product.name}</h3>
-        <p class="text-xs text-amber-400 font-medium">${product.amharic_name}</p>
-        <p class="text-[11px] text-slate-300 mt-2">${product.description}</p>
+        <h3 class="text-base font-black text-white">${product.title}</h3>
+        <p class="text-xs text-amber-400 font-bold">${product.amharic}</p>
       </div>
 
+      <!-- Financial Details Grid -->
       <div class="bg-slate-950 p-3.5 rounded-2xl border border-slate-800 space-y-2 mb-4 text-xs">
         <div class="flex justify-between items-center text-slate-300">
-          <span>Package Price / የፓኬጅ ዋጋ:</span>
-          <span class="font-extrabold text-white text-sm">${product.price.toLocaleString()} ETB</span>
+          <span>Item Price / የፓኬጅ ዋጋ:</span>
+          <span class="font-black text-white text-sm">${product.price.toLocaleString()} ETB</span>
         </div>
         <div class="flex justify-between items-center text-slate-300">
-          <span>Daily Income / የቀን ገቢ:</span>
-          <span class="font-bold text-emerald-400">+${product.daily_income} ETB / day</span>
+          <span>Daily Return / የቀን ገቢ:</span>
+          <span class="font-extrabold text-emerald-400">+${product.daily_return} ETB / ቀን</span>
         </div>
         <div class="flex justify-between items-center text-slate-300">
-          <span>Contract Period / የጊዜ ቆይታ:</span>
-          <span class="font-bold text-white">90 Days (ቀናት)</span>
+          <span>Total Cycle / የጊዜ ቆይታ:</span>
+          <span class="font-bold text-white">${product.duration_days} Days (ቀናት)</span>
         </div>
         <div class="flex justify-between items-center text-slate-300 pt-2 border-t border-slate-800">
-          <span>Total Expected Return:</span>
-          <span class="font-extrabold text-amber-400 text-sm">${product.total_return.toLocaleString()} ETB</span>
+          <span>Total Return / ጠቅላላ ገቢ:</span>
+          <span class="font-black text-amber-400 text-sm">${product.total_return.toLocaleString()} ETB</span>
         </div>
       </div>
 
       <div class="bg-slate-900 p-2.5 rounded-xl border ${hasEnough ? 'border-emerald-500/30' : 'border-red-500/30'} flex justify-between items-center text-xs mb-4">
-        <span class="text-slate-400">Your Current Balance:</span>
+        <span class="text-slate-400">የአሁኑ ቀሪ ሂሳብ:</span>
         <span class="font-bold ${hasEnough ? 'text-emerald-400' : 'text-red-400'}">${userBal.toFixed(2)} ETB</span>
       </div>
 
-      ${hasEnough ? `
-        <button onclick="app.confirmPurchase(${product.id})" id="btn-confirm-buy" class="w-full py-3.5 rounded-xl btn-gold text-xs font-bold shadow-lg shadow-amber-500/20">
-          Confirm Purchase / ግዢውን አረጋግጥ (${product.price} ETB)
-        </button>
+      ${!this.currentUser ? `
+        <div class="space-y-2">
+          <p class="text-[11px] text-amber-400 text-center font-bold">⚠️ ይህንን ፓኬጅ ለመግዛት እባክዎ መጀመሪያ ይግቡ ወይም ይመዝገቡ።</p>
+          <div class="grid grid-cols-2 gap-2.5">
+            <button onclick="app.closePurchaseModal()" class="py-3 rounded-xl bg-slate-800 text-slate-300 hover:text-white font-bold text-xs transition">
+              ሰርዝ
+            </button>
+            <button onclick="app.closePurchaseModal(); app.navigateTo('screen-auth');" class="py-3 rounded-xl btn-gold text-xs font-black">
+              ይግቡ / Sign In
+            </button>
+          </div>
+        </div>
+      ` : hasEnough ? `
+        <!-- Direct "ግዛ" & "ሰርዝ" Buttons -->
+        <div class="grid grid-cols-2 gap-2.5">
+          <button onclick="app.closePurchaseModal()" class="py-3 rounded-xl bg-slate-800 text-slate-300 hover:text-white font-bold text-xs transition">
+            ሰርዝ
+          </button>
+          <button onclick="app.confirmPurchase(${product.id})" id="btn-confirm-buy" class="py-3 rounded-xl btn-gold text-xs font-black shadow-lg shadow-amber-500/20">
+            ግዛ
+          </button>
+        </div>
       ` : `
         <div class="space-y-2">
-          <p class="text-[11px] text-red-400 text-center font-medium">⚠️ Insufficient balance to buy this package.</p>
-          <button onclick="app.closeProductModal(); app.navigateTo('screen-deposit-amount'); app.selectDepositPreset(${product.price});" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-blue-500/20">
-            Deposit ${product.price} ETB Now / አስገባ
-          </button>
+          <p class="text-[11px] text-red-400 text-center font-bold">⚠️ በቂ ቀሪ ሂሳብ የለዎትም። እባክዎ መጀመሪያ ሂሳብ ያስገቡ።</p>
+          <div class="grid grid-cols-2 gap-2.5">
+            <button onclick="app.closePurchaseModal()" class="py-3 rounded-xl bg-slate-800 text-slate-300 hover:text-white font-bold text-xs transition">
+              ሰርዝ
+            </button>
+            <button onclick="app.closePurchaseModal(); app.navigateTo('screen-deposit-amount'); app.selectDepositPreset(${product.price});" class="py-3 rounded-xl btn-gold text-xs font-black">
+              አስገባ (${product.price} ETB)
+            </button>
+          </div>
         </div>
       `}
     `;
@@ -387,31 +483,31 @@ class EthioMercatoApp {
     document.getElementById('modal-product-detail').classList.remove('hidden');
   }
 
-  closeProductModal() {
+  closePurchaseModal() {
     document.getElementById('modal-product-detail').classList.add('hidden');
   }
 
   async confirmPurchase(productId) {
-    const product = PRODUCTS_DATA.find(p => p.id === productId);
+    const product = VIP_PRODUCTS.find(p => p.id === productId);
     if (!product || !this.currentUser) return;
 
     const btn = document.getElementById('btn-confirm-buy');
     if (btn) {
       btn.disabled = true;
-      btn.textContent = "Processing transaction with database...";
+      btn.textContent = "በመግዛት ላይ...";
     }
 
     try {
-      await window.dataService.buyProduct(this.currentUser.id, product);
-      this.closeProductModal();
-      this.showToast(`🎉 Congratulations! You successfully acquired ${product.name}!`, 'success');
-      await this.refreshUserData();
+      await window.supabaseService.buyProduct(this.currentUser.id, product);
+      this.closePurchaseModal();
+      this.showToast(`🎉 እንኳን ደስ አለዎት! ${product.title} በተሳካ ሁኔታ ገዝተዋል።`, 'success');
+      await this.refreshUser();
       this.navigateTo('screen-my-products');
     } catch (err) {
       this.showToast(err.message, 'error');
       if (btn) {
         btn.disabled = false;
-        btn.textContent = `Confirm Purchase (${product.price} ETB)`;
+        btn.textContent = "ግዛ";
       }
     }
   }
@@ -419,81 +515,71 @@ class EthioMercatoApp {
   // ----------------------------------------------------------------------------
   // SCREEN 5: MY PRODUCTS SCREEN
   // ----------------------------------------------------------------------------
-  async refreshMyProducts() {
-    if (!this.currentUser || !window.dataService.isReady()) return;
+  async renderPurchases() {
+    if (!this.currentUser) return;
     const container = document.getElementById('my-products-list');
     const activeCountEl = document.getElementById('summary-active-count');
-    const collectedEl = document.getElementById('summary-total-collected');
+    const totalCollectedEl = document.getElementById('summary-total-collected');
     if (!container) return;
 
-    container.innerHTML = `<div class="text-center py-8 text-xs text-slate-400">Fetching live active contracts...</div>`;
+    container.innerHTML = `<div class="text-center py-8 text-xs text-slate-400">የተገዙ እቃዎችን በመጫን ላይ...</div>`;
 
     try {
-      const contracts = await window.dataService.getUserProducts(this.currentUser.id);
-      const activeContracts = contracts.filter(c => c.status === 'active');
-      const totalCollected = contracts.reduce((acc, cur) => acc + Number(cur.total_accumulated || 0), 0);
+      const purchases = await window.supabaseService.getPurchases(this.currentUser.id);
+      const activePurchases = purchases.filter(p => p.status === 'active');
+      const totalEarned = purchases.reduce((acc, cur) => acc + Number(cur.total_earned || 0), 0);
 
-      if (activeCountEl) activeCountEl.textContent = activeContracts.length;
-      if (collectedEl) collectedEl.innerHTML = `${totalCollected.toFixed(2)} <span class="text-xs font-normal">ETB</span>`;
+      if (activeCountEl) activeCountEl.textContent = activePurchases.length;
+      if (totalCollectedEl) totalCollectedEl.innerHTML = `${totalEarned.toFixed(2)} <span class="text-xs font-normal">ETB</span>`;
 
-      if (contracts.length === 0) {
+      if (purchases.length === 0) {
         container.innerHTML = `
           <div class="glass-panel rounded-3xl p-8 text-center border border-slate-800">
             <div class="text-4xl mb-3">🛍️</div>
-            <h4 class="text-sm font-bold text-white mb-1">No Active Packages Found</h4>
-            <p class="text-xs text-slate-400 mb-4">Invest in a VIP package to begin receiving guaranteed daily profit returns credited directly to your account.</p>
-            <button onclick="app.navigateTo('screen-home')" class="px-5 py-2.5 rounded-xl btn-gold text-xs font-bold">
-              Explore Packages / ፓኬጆችን ይመልከቱ
+            <h4 class="text-sm font-bold text-white mb-1">እስካሁን የተገዛ እቃ የለም</h4>
+            <p class="text-xs text-slate-400 mb-4">የቀን ገቢ ለማግኘት የቪአይፒ ፓኬጅ ይግዙ።</p>
+            <button onclick="app.navigateTo('screen-home')" class="px-5 py-2.5 rounded-xl btn-gold text-xs font-black">
+              ፓኬጆችን ይመልከቱ
             </button>
           </div>
         `;
         return;
       }
 
-      container.innerHTML = contracts.map(c => {
-        const daysLeft = Math.max(0, (c.period_days || 90) - (c.days_elapsed || 0));
-        const progressPct = Math.min(100, Math.round(((c.days_elapsed || 0) / (c.period_days || 90)) * 100));
+      container.innerHTML = purchases.map(p => {
+        const prod = VIP_PRODUCTS.find(item => item.id === p.product_id) || { title: `VIP Package ${p.product_id}` };
+        const daysRemaining = p.days_remaining !== undefined ? p.days_remaining : 90;
 
         return `
           <div class="glass-panel rounded-3xl p-4 border border-slate-800 shadow-lg">
             <div class="flex items-center justify-between mb-2">
-              <span class="text-xs font-extrabold text-white">${c.product_name}</span>
-              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${c.status === 'active' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-700 text-slate-300'}">
-                ${c.status.toUpperCase()}
+              <span class="text-xs font-black text-white">${prod.title}</span>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${p.status === 'active' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-700 text-slate-300'}">
+                ${p.status.toUpperCase()}
               </span>
             </div>
 
             <div class="grid grid-cols-3 gap-2 bg-slate-950 p-2.5 rounded-2xl border border-slate-800 text-center my-3">
               <div>
-                <p class="text-[9px] text-slate-400">Daily Return</p>
-                <p class="text-xs font-extrabold text-emerald-400">+${c.daily_income} ETB</p>
+                <p class="text-[9px] text-slate-400">የቀን ገቢ</p>
+                <p class="text-xs font-black text-emerald-400">+${p.daily_return} ETB</p>
               </div>
               <div>
-                <p class="text-[9px] text-slate-400">Total Earned</p>
-                <p class="text-xs font-extrabold text-amber-400">${c.total_accumulated || 0} ETB</p>
+                <p class="text-[9px] text-slate-400">ጠቅላላ የተገኘ</p>
+                <p class="text-xs font-black text-amber-400">${p.total_earned || 0} ETB</p>
               </div>
               <div>
-                <p class="text-[9px] text-slate-400">Days Remaining</p>
-                <p class="text-xs font-extrabold text-white">${daysLeft} Days</p>
+                <p class="text-[9px] text-slate-400">የቀሩ ቀናት</p>
+                <p class="text-xs font-black text-white">${daysRemaining} Days</p>
               </div>
             </div>
 
-            <div class="mb-3">
-              <div class="flex justify-between text-[10px] text-slate-400 mb-1">
-                <span>Contract Progress</span>
-                <span>${c.days_elapsed} / ${c.period_days} Days (${progressPct}%)</span>
-              </div>
-              <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                <div class="h-full bg-gradient-to-r from-amber-500 to-emerald-400 rounded-full" style="width: ${progressPct}%"></div>
-              </div>
-            </div>
-
-            ${c.status === 'active' ? `
-              <button onclick="app.claimDaily('${c.id}')" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-bold text-xs shadow-md shadow-emerald-600/20 flex items-center justify-center space-x-1.5 transition">
-                <span>🎁 Claim Today's Profit (+${c.daily_income} ETB)</span>
+            ${p.status === 'active' ? `
+              <button onclick="app.claimDaily('${p.id}')" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black text-xs shadow-md shadow-emerald-600/20 flex items-center justify-center space-x-1.5 transition">
+                <span>🎁 የቀን ገቢ ሰብስብ (+${p.daily_return} ETB)</span>
               </button>
             ` : `
-              <p class="text-center text-[11px] text-slate-400 font-medium py-1">Contract 90-day cycle fully completed.</p>
+              <p class="text-center text-[11px] text-slate-400 font-medium py-1">የ 90 ቀናት ዑደት ተጠናቋል።</p>
             `}
           </div>
         `;
@@ -503,12 +589,12 @@ class EthioMercatoApp {
     }
   }
 
-  async claimDaily(contractId) {
+  async claimDaily(purchaseId) {
     try {
-      const res = await window.dataService.claimDailyProfit(this.currentUser.id, contractId);
-      this.showToast(res.message, 'success');
-      await this.refreshUserData();
-      this.refreshMyProducts();
+      const res = await window.supabaseService.claimDaily(purchaseId, this.currentUser.id);
+      this.showToast(`✅ +${res.daily_return} ETB የቀን ገቢ ወደ ሂሳብዎ ገብቷል!`, 'success');
+      await this.refreshUser();
+      this.renderPurchases();
     } catch (err) {
       this.showToast(err.message, 'error');
     }
@@ -517,12 +603,11 @@ class EthioMercatoApp {
   // ----------------------------------------------------------------------------
   // SCREEN 6: MINE (PROFILE) PAGE
   // ----------------------------------------------------------------------------
-  async renderProfileScreen() {
+  async renderProfile() {
     if (!this.currentUser) return;
-    await this.refreshUserData();
+    await this.refreshUser();
 
     const phoneEl = document.getElementById('profile-phone');
-    const vipEl = document.getElementById('profile-vip-pill');
     const uidEl = document.getElementById('profile-uid');
     const refcodeEl = document.getElementById('profile-refcode');
     const walletEl = document.getElementById('profile-wallet-bal');
@@ -530,20 +615,18 @@ class EthioMercatoApp {
     const withdrawEl = document.getElementById('profile-withdraw-total');
 
     if (phoneEl) phoneEl.textContent = this.currentUser.phone;
-    if (vipEl) vipEl.textContent = `VIP ${this.currentUser.vip_level || 0}`;
     if (uidEl) uidEl.textContent = this.currentUser.id.substring(0, 8);
     if (refcodeEl) refcodeEl.textContent = this.currentUser.referral_code || 'ETH777';
-
     if (walletEl) walletEl.textContent = Number(this.currentUser.balance || 0).toFixed(2);
-    if (rechargeEl) rechargeEl.textContent = Number(this.currentUser.total_recharge || 0).toFixed(2);
+    if (rechargeEl) rechargeEl.textContent = Number(this.currentUser.total_recharged || 0).toFixed(2);
     if (withdrawEl) withdrawEl.textContent = Number(this.currentUser.total_withdrawn || 0).toFixed(2);
   }
 
   // ----------------------------------------------------------------------------
   // INVITE / TEAM SCREEN
   // ----------------------------------------------------------------------------
-  async renderInviteScreen() {
-    if (!this.currentUser || !window.dataService.isReady()) return;
+  async renderInvite() {
+    if (!this.currentUser) return;
     const codeEl = document.getElementById('invite-code-display');
     const countEl = document.getElementById('team-member-count');
     const listEl = document.getElementById('team-members-list');
@@ -551,14 +634,14 @@ class EthioMercatoApp {
     if (codeEl) codeEl.textContent = this.currentUser.referral_code || 'ETH777';
 
     try {
-      const team = await window.dataService.getTeamMembers(this.currentUser.id, this.currentUser.referral_code);
+      const team = await window.supabaseService.getTeamMembers(this.currentUser.referral_code);
       if (countEl) countEl.textContent = team.length;
 
       if (!listEl) return;
       if (team.length === 0) {
         listEl.innerHTML = `
           <div class="glass-panel rounded-2xl p-6 text-center text-xs text-slate-400 border border-slate-800">
-            Share your invitation code with prospective investors to build your network and earn 10% direct commission instantly.
+            የግብዣ ኮድዎን ለጓደኞች በማጋራት የቡድን አባላትን ያፍሩና 10% ፈጣን ኮሚሽን ያግኙ!
           </div>
         `;
         return;
@@ -572,17 +655,14 @@ class EthioMercatoApp {
             </div>
             <div>
               <p class="font-bold text-white">${m.phone}</p>
-              <p class="text-[10px] text-slate-400">Registered: ${new Date(m.created_at).toLocaleDateString()}</p>
+              <p class="text-[10px] text-slate-400">${new Date(m.created_at).toLocaleDateString()}</p>
             </div>
           </div>
-          <div class="text-right">
-            <span class="vip-badge text-[9px] px-2 py-0.5 rounded-full">VIP ${m.vip_level}</span>
-            <p class="text-[10px] text-emerald-400 font-semibold mt-1">10% Tier 1</p>
-          </div>
+          <span class="text-[10px] text-emerald-400 font-bold">10% Tier 1</span>
         </div>
       `).join('');
     } catch (err) {
-      console.warn("Could not load team:", err);
+      console.warn("Team query notice:", err);
     }
   }
 
@@ -590,9 +670,9 @@ class EthioMercatoApp {
     if (!this.currentUser) return;
     const code = this.currentUser.referral_code || 'ETH777';
     navigator.clipboard.writeText(code).then(() => {
-      this.showToast(`Invitation code copied: ${code}`, 'success');
+      this.showToast(`የግብዣ ኮድ ኮፒ ተደርጓል: ${code}`, 'success');
     }).catch(() => {
-      this.showToast(`Code: ${code}`, 'info');
+      this.showToast(`ኮድ: ${code}`, 'info');
     });
   }
 
@@ -601,14 +681,15 @@ class EthioMercatoApp {
     const code = this.currentUser.referral_code || 'ETH777';
     const link = `${window.location.origin}${window.location.pathname}?ref=${code}`;
     navigator.clipboard.writeText(link).then(() => {
-      this.showToast("Referral link copied to clipboard!", 'success');
+      this.showToast("የግብዣ ሊንክ ኮፒ ተደርጓል!", 'success');
     }).catch(() => {
-      this.showToast(`Link: ${link}`, 'info');
+      this.showToast(`ሊንክ: ${link}`, 'info');
     });
   }
 
   // ----------------------------------------------------------------------------
   // SCREENS 7 & 8: DEPOSIT AMOUNT SELECTION
+  // (Br 700, Br 1000, Br 2000, Br 5000, Br 10000, Br 20000, Br 40000, Br 80000, Br 100000)
   // ----------------------------------------------------------------------------
   selectDepositPreset(amount) {
     this.selectedDepositAmount = amount;
@@ -616,22 +697,22 @@ class EthioMercatoApp {
     if (input) input.value = amount;
 
     document.querySelectorAll('.preset-btn').forEach(btn => {
-      btn.classList.remove('border-amber-500', 'bg-amber-500/10', 'text-amber-400');
+      btn.classList.remove('border-amber-500', 'bg-amber-500/20', 'text-amber-400');
       btn.classList.add('border-slate-700', 'bg-slate-950', 'text-slate-300');
     });
 
     const activeBtn = Array.from(document.querySelectorAll('.preset-btn')).find(b => b.textContent.includes(amount.toLocaleString()));
     if (activeBtn) {
-      activeBtn.classList.add('border-amber-500', 'bg-amber-500/10', 'text-amber-400');
+      activeBtn.classList.add('border-amber-500', 'bg-amber-500/20', 'text-amber-400');
     }
   }
 
-  proceedToGatewayScreen() {
+  proceedToGateway() {
     const input = document.getElementById('deposit-input-amount');
     const amt = Number(input ? input.value : this.selectedDepositAmount);
 
     if (!amt || amt < 50) {
-      this.showToast("Minimum deposit is 50 ETB.", 'error');
+      this.showToast("ዝቅተኛው የተቀማጭ መጠን 50 ETB ነው።", 'error');
       return;
     }
 
@@ -643,7 +724,7 @@ class EthioMercatoApp {
   }
 
   // ----------------------------------------------------------------------------
-  // SCREEN 9: PAYMENT GATEWAY & SCREENSHOT UPLOAD
+  // SCREEN 9: PAYMENT GATEWAYS & SCREENSHOT UPLOAD
   // ----------------------------------------------------------------------------
   selectGatewayTab(gatewayId) {
     this.selectedGateway = gatewayId;
@@ -665,54 +746,54 @@ class EthioMercatoApp {
     const container = document.getElementById('merchant-account-card');
     if (!container) return;
 
-    const gateway = OFFICIAL_PAYMENT_GATEWAYS[this.selectedGateway];
+    const gateway = MERCHANTS[this.selectedGateway];
     if (!gateway) return;
 
     container.innerHTML = `
       <div class="flex items-center space-x-3 mb-4">
-        <div class="p-2.5 rounded-2xl bg-slate-950 border border-slate-700">
-          ${gateway.icon_svg}
+        <div class="w-10 h-10 rounded-2xl bg-slate-950 border border-slate-700 flex items-center justify-center text-xl">
+          ${gateway.icon}
         </div>
         <div>
-          <h4 class="text-sm font-bold text-white">${gateway.title}</h4>
-          <span class="text-[10px] text-amber-400 font-semibold">Verified Official Merchant Gateway</span>
+          <h4 class="text-sm font-black text-white">${gateway.title}</h4>
+          <span class="text-[10px] text-amber-400 font-semibold">የተረጋገጠ ይፋዊ የክፍያ አካውንት</span>
         </div>
       </div>
 
       <div class="space-y-3 bg-slate-950 p-4 rounded-2xl border border-slate-800 text-xs">
         <div class="flex justify-between items-center pb-2 border-b border-slate-800/80">
           <div>
-            <span class="text-[10px] text-slate-400 block">Recipient Account Name / የስም ባለቤት</span>
-            <span class="font-bold text-white text-sm">${gateway.name}</span>
+            <span class="text-[10px] text-slate-400 block">የስም ባለቤት / Recipient Name</span>
+            <span class="font-extrabold text-white text-sm">${gateway.name}</span>
           </div>
-          <button onclick="app.copyText('${gateway.name}', 'Account Name')" class="text-xs px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 hover:text-white border border-slate-700">
+          <button onclick="app.copyText('${gateway.name}', 'ስም')" class="text-xs px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 hover:text-white border border-slate-700">
             Copy
           </button>
         </div>
 
         <div class="flex justify-between items-center pt-1">
           <div>
-            <span class="text-[10px] text-slate-400 block">${gateway.account_label}</span>
+            <span class="text-[10px] text-slate-400 block">${gateway.label}</span>
             <span class="font-mono font-black text-amber-400 text-base tracking-wider">${gateway.account}</span>
           </div>
-          <button onclick="app.copyText('${gateway.account}', '${gateway.account_label}')" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 hover:bg-amber-400 shadow">
-            Copy Number
+          <button onclick="app.copyText('${gateway.account}', '${gateway.label}')" class="text-xs font-black px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 hover:bg-amber-400 shadow">
+            ቁጥሩን ኮፒ አድርግ
           </button>
         </div>
       </div>
 
       <p class="text-[11px] text-slate-400 mt-3 flex items-start space-x-1.5">
         <span class="text-amber-400">ℹ️</span>
-        <span>${gateway.instructions}</span>
+        <span>ከላይ በተጠቀሰው አካውንት ትክክለኛውን የብር መጠን ካስተላለፉ በኋላ ደረሰኙን ስክሪንሾት በማድረግ ከስር ያያይዙ።</span>
       </p>
     `;
   }
 
   copyText(text, label) {
     navigator.clipboard.writeText(text).then(() => {
-      this.showToast(`Copied ${label}: ${text}`, 'success');
+      this.showToast(`ኮፒ ተደርጓል (${label}): ${text}`, 'success');
     }).catch(() => {
-      this.showToast(`${label}: ${text}`, 'info');
+      this.showToast(`${text}`, 'info');
     });
   }
 
@@ -732,7 +813,7 @@ class EthioMercatoApp {
         preview.classList.remove('hidden');
         placeholder.classList.add('hidden');
       }
-      this.showToast("Payment receipt screenshot loaded.", 'info');
+      this.showToast("የደረሰኝ ስክሪንሾት በተሳካ ሁኔታ ተመርጧል።", 'info');
     };
     reader.readAsDataURL(file);
   }
@@ -741,60 +822,73 @@ class EthioMercatoApp {
     if (!this.currentUser) return;
 
     if (!this.selectedScreenshotDataUrl && !this.selectedScreenshotFile) {
-      this.showToast("Please attach a photo of your payment screenshot.", 'error');
+      this.showToast("እባክዎ የተከፈለበትን የደረሰኝ ስክሪንሾት ያያይዙ።", 'error');
       return;
     }
 
-    const gateway = OFFICIAL_PAYMENT_GATEWAYS[this.selectedGateway];
-    const txRefInput = document.getElementById('deposit-tx-ref');
-    const txRef = txRefInput ? txRefInput.value.trim() : '';
-
     const btn = document.getElementById('btn-submit-deposit');
-    const origText = btn.innerHTML;
+    const orig = btn.innerHTML;
     btn.disabled = true;
-    btn.innerHTML = `<span>Uploading Receipt to Supabase...</span>`;
+    btn.innerHTML = `<span>ደረሰኙ ወደ ሰርቨር እየተላከ ነው...</span>`;
 
     try {
       let screenshotUrl = this.selectedScreenshotDataUrl;
       if (this.selectedScreenshotFile) {
-        screenshotUrl = await window.dataService.uploadReceiptImage(this.selectedScreenshotFile);
+        screenshotUrl = await window.supabaseService.uploadReceipt(this.selectedScreenshotFile);
       }
 
-      await window.dataService.submitDeposit({
-        userId: this.currentUser.id,
-        amount: this.selectedDepositAmount,
-        paymentMethod: this.selectedGateway,
-        merchantName: gateway.name,
-        merchantAccount: gateway.account,
-        transactionRef: txRef,
-        screenshotUrl: screenshotUrl
-      });
+      await window.supabaseService.submitDeposit(
+        this.currentUser.id,
+        this.selectedDepositAmount,
+        this.selectedGateway,
+        screenshotUrl
+      );
 
-      this.showToast("✅ Deposit submitted! Awaiting administrator verification.", 'success');
+      this.showToast("✅ የተቀማጭ ጥያቄዎ ገብቷል! በአድሚን ተረጋግጦ በቅርቡ ይፀድቃል።", 'success');
 
+      // Reset
       this.selectedScreenshotFile = null;
       this.selectedScreenshotDataUrl = null;
       const preview = document.getElementById('screenshot-preview');
       const placeholder = document.getElementById('upload-placeholder');
       if (preview) preview.classList.add('hidden');
       if (placeholder) placeholder.classList.remove('hidden');
-      if (txRefInput) txRefInput.value = '';
 
       this.openHistoryModal('deposits');
     } catch (err) {
       this.showToast(err.message, 'error');
     } finally {
       btn.disabled = false;
-      btn.innerHTML = origText;
+      btn.innerHTML = orig;
     }
   }
 
   // ----------------------------------------------------------------------------
-  // WITHDRAWALS (STRICT BUSINESS RULE ENFORCEMENT)
+  // WITHDRAWALS (CONDITIONAL LOGIC ENFORCED: MUST HAVE APPROVED DEPOSIT)
   // ----------------------------------------------------------------------------
   async openWithdrawModal() {
-    if (!this.currentUser) return;
-    await this.refreshUserData();
+    if (!this.currentUser) {
+      this.showToast('እባክዎ መጀመሪያ ይግቡ / Please sign in first', 'info');
+      this.navigateTo('screen-auth');
+      return;
+    }
+
+    // Real-time status checking from Supabase to verify if user has at least one approved deposit
+    try {
+      const hasApproved = await window.supabaseService.hasApprovedDeposit(this.currentUser.id);
+      if (!hasApproved) {
+        alert("ይቅርታ! ገንዘብ ለማውጣት መጀመሪያ ብር አስገብተው በአድሚን ማስረጋገጥ/ማጽደቅ ይኖርብዎታል።");
+        this.showToast("ይቅርታ! ገንዘብ ለማውጣት መጀመሪያ ብር አስገብተው በአድሚን ማስረጋገጥ/ማጽደቅ ይኖርብዎታል።", 'error');
+        return;
+      }
+    } catch (err) {
+      console.warn("Check approved deposit error:", err);
+      alert("ይቅርታ! ገንዘብ ለማውጣት መጀመሪያ ብር አስገብተው በአድሚን ማስረጋገጥ/ማጽደቅ ይኖርብዎታል።");
+      this.showToast("ይቅርታ! ገንዘብ ለማውጣት መጀመሪያ ብር አስገብተው በአድሚን ማስረጋገጥ/ማጽደቅ ይኖርብዎታል።", 'error');
+      return;
+    }
+
+    await this.refreshUser();
 
     const availEl = document.getElementById('withdraw-available-bal');
     if (availEl) availEl.textContent = Number(this.currentUser.balance || 0).toFixed(2);
@@ -813,70 +907,65 @@ class EthioMercatoApp {
     const amountInput = document.getElementById('withdraw-amount');
     const methodInput = document.getElementById('withdraw-method');
     const accNumInput = document.getElementById('withdraw-acc-num');
-    const accNameInput = document.getElementById('withdraw-acc-name');
 
     const amount = Number(amountInput.value);
     const method = methodInput.value;
     const accNum = accNumInput.value.trim();
-    const accName = accNameInput.value.trim();
 
     try {
-      await window.dataService.submitWithdrawal({
-        userId: this.currentUser.id,
-        amount: amount,
-        paymentMethod: method,
-        accountNumber: accNum,
-        accountHolderName: accName
-      });
+      await window.supabaseService.submitWithdrawal(
+        this.currentUser.id,
+        amount,
+        accNum,
+        method
+      );
 
       this.closeWithdrawModal();
-      this.showToast(`✅ Withdrawal of ${amount} ETB registered! Payout is processing.`, 'success');
-      await this.refreshUserData();
+      this.showToast(`✅ የ ${amount} ETB የወጪ ጥያቄ ቀርቧል! በ 24 ሰዓት ውስጥ ይከፈላል።`, 'success');
+      await this.refreshUser();
       this.openHistoryModal('withdrawals');
     } catch (err) {
+      alert(err.message);
       this.showToast(err.message, 'error');
     }
   }
 
   // ----------------------------------------------------------------------------
-  // TRANSACTION HISTORY MODAL (DEPOSITS & WITHDRAWALS)
+  // TRANSACTION LEDGER MODAL
   // ----------------------------------------------------------------------------
   async openHistoryModal(type) {
-    if (!this.currentUser || !window.dataService.isReady()) return;
+    if (!this.currentUser) return;
     const titleEl = document.getElementById('history-modal-title');
     const contentEl = document.getElementById('history-modal-content');
     if (!contentEl) return;
 
     document.getElementById('modal-history').classList.remove('hidden');
-    contentEl.innerHTML = `<div class="text-center py-6 text-xs text-slate-400">Loading ledger records...</div>`;
+    contentEl.innerHTML = `<div class="text-center py-6 text-xs text-slate-400">ታሪክ በመጫን ላይ...</div>`;
 
     if (type === 'deposits') {
       titleEl.textContent = "Deposit Records / የተቀማጭ ታሪክ";
-      const records = await window.dataService.getUserDeposits(this.currentUser.id);
+      const records = await window.supabaseService.getDeposits(this.currentUser.id);
       if (records.length === 0) {
-        contentEl.innerHTML = `<div class="text-center py-6 text-xs text-slate-400">No deposit records found.</div>`;
+        contentEl.innerHTML = `<div class="text-center py-6 text-xs text-slate-400">ምንም የተቀማጭ ታሪክ አልተገኘም።</div>`;
         return;
       }
 
       contentEl.innerHTML = records.map(r => `
         <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 text-xs space-y-1.5">
           <div class="flex justify-between items-center">
-            <span class="font-bold text-white text-sm">+${r.amount} ETB</span>
-            <span class="status-${r.status} text-[10px] font-bold px-2 py-0.5 rounded-full capitalize">
+            <span class="font-black text-white text-sm">+${r.amount} ETB</span>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${r.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : (r.status === 'rejected' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30')}">
               ${r.status}
             </span>
           </div>
           <div class="text-[10px] text-slate-400 flex justify-between">
-            <span>Gateway: ${r.payment_method.toUpperCase()}</span>
-            <span>${new Date(r.created_at).toLocaleString()}</span>
-          </div>
-          <div class="text-[10px] text-slate-500 truncate">
-            Ref: ${r.transaction_ref || 'N/A'}
+            <span>መንገድ: ${r.payment_method.toUpperCase()}</span>
+            <span>${new Date(r.created_at).toLocaleDateString()}</span>
           </div>
           ${r.screenshot_url ? `
             <div class="pt-1">
               <a href="${r.screenshot_url}" target="_blank" class="text-[10px] text-amber-400 hover:underline flex items-center space-x-1">
-                <span>View Uploaded Receipt ↗</span>
+                <span>የተላከውን ደረሰኝ ይመልከቱ ↗</span>
               </a>
             </div>
           ` : ''}
@@ -884,26 +973,23 @@ class EthioMercatoApp {
       `).join('');
     } else {
       titleEl.textContent = "Withdrawal Records / የወጪ ታሪክ";
-      const records = await window.dataService.getUserWithdrawals(this.currentUser.id);
+      const records = await window.supabaseService.getWithdrawals(this.currentUser.id);
       if (records.length === 0) {
-        contentEl.innerHTML = `<div class="text-center py-6 text-xs text-slate-400">No withdrawal records found.</div>`;
+        contentEl.innerHTML = `<div class="text-center py-6 text-xs text-slate-400">ምንም የወጪ ታሪክ አልተገኘም።</div>`;
         return;
       }
 
       contentEl.innerHTML = records.map(w => `
         <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 text-xs space-y-1.5">
           <div class="flex justify-between items-center">
-            <span class="font-bold text-red-400 text-sm">-${w.amount} ETB</span>
-            <span class="status-${w.status} text-[10px] font-bold px-2 py-0.5 rounded-full capitalize">
+            <span class="font-black text-red-400 text-sm">-${w.amount} ETB</span>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${w.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}">
               ${w.status}
             </span>
           </div>
           <div class="text-[10px] text-slate-400 flex justify-between">
-            <span>To: ${w.payment_method.toUpperCase()} (${w.account_number})</span>
-            <span>${new Date(w.created_at).toLocaleString()}</span>
-          </div>
-          <div class="text-[10px] text-slate-400">
-            Name: ${w.account_holder_name}
+            <span>ወደ: ${w.payment_method.toUpperCase()} (${w.account_number})</span>
+            <span>${new Date(w.created_at).toLocaleDateString()}</span>
           </div>
         </div>
       `).join('');
@@ -912,180 +998,6 @@ class EthioMercatoApp {
 
   closeHistoryModal() {
     document.getElementById('modal-history').classList.add('hidden');
-  }
-
-  // ----------------------------------------------------------------------------
-  // SCREEN 2: TELEGRAM CHANNEL POPUP MODAL
-  // ----------------------------------------------------------------------------
-  openTelegramModal() {
-    document.getElementById('modal-telegram').classList.remove('hidden');
-  }
-
-  closeTelegramModal() {
-    document.getElementById('modal-telegram').classList.add('hidden');
-  }
-
-  // ----------------------------------------------------------------------------
-  // ADMIN PANEL CONTROLLER
-  // ----------------------------------------------------------------------------
-  async openAdminModal() {
-    document.getElementById('modal-admin').classList.remove('hidden');
-    this.refreshAdminPanel();
-  }
-
-  closeAdminModal() {
-    document.getElementById('modal-admin').classList.add('hidden');
-  }
-
-  setAdminTab(tab) {
-    this.adminTab = tab;
-    const depTab = document.getElementById('admin-tab-deposits');
-    const wdTab = document.getElementById('admin-tab-withdrawals');
-
-    if (tab === 'deposits') {
-      depTab.className = "flex-1 py-1.5 text-xs font-bold rounded-lg bg-amber-500 text-slate-950 transition";
-      wdTab.className = "flex-1 py-1.5 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition";
-    } else {
-      wdTab.className = "flex-1 py-1.5 text-xs font-bold rounded-lg bg-amber-500 text-slate-950 transition";
-      depTab.className = "flex-1 py-1.5 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition";
-    }
-
-    this.refreshAdminPanel();
-  }
-
-  async refreshAdminPanel() {
-    const contentEl = document.getElementById('admin-modal-content');
-    const pendingDepCountEl = document.getElementById('admin-pending-dep-count');
-    const pendingWdCountEl = document.getElementById('admin-pending-wd-count');
-
-    try {
-      const deposits = await window.dataService.getAllDeposits();
-      const withdrawals = await window.dataService.getAllWithdrawals();
-
-      const pendingDeps = deposits.filter(d => d.status === 'pending');
-      const pendingWds = withdrawals.filter(w => w.status === 'pending');
-
-      if (pendingDepCountEl) pendingDepCountEl.textContent = pendingDeps.length;
-      if (pendingWdCountEl) pendingWdCountEl.textContent = pendingWds.length;
-
-      if (this.adminTab === 'deposits') {
-        if (deposits.length === 0) {
-          contentEl.innerHTML = `<div class="text-center py-6 text-slate-400">No deposits submitted yet.</div>`;
-          return;
-        }
-
-        contentEl.innerHTML = deposits.map(d => `
-          <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 space-y-2">
-            <div class="flex justify-between items-start">
-              <div>
-                <p class="font-bold text-white text-sm">+${d.amount} ETB</p>
-                <p class="text-[10px] text-slate-400">User: ${d.user_phone}</p>
-                <p class="text-[10px] text-slate-400">Gateway: ${d.payment_method.toUpperCase()} (${d.transaction_ref || 'No ref'})</p>
-              </div>
-              <span class="status-${d.status} text-[9px] px-2 py-0.5 rounded-full capitalize font-bold">
-                ${d.status}
-              </span>
-            </div>
-
-            ${d.screenshot_url ? `
-              <div class="my-2 bg-slate-900 p-1.5 rounded-xl border border-slate-800">
-                <p class="text-[9px] text-slate-400 mb-1">Receipt Screenshot:</p>
-                <a href="${d.screenshot_url}" target="_blank">
-                  <img src="${d.screenshot_url}" class="w-full h-32 object-contain bg-black rounded-lg" alt="Receipt">
-                </a>
-              </div>
-            ` : ''}
-
-            ${d.status === 'pending' ? `
-              <div class="flex space-x-2 pt-1">
-                <button onclick="app.adminApproveDeposit('${d.id}')" class="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] transition">
-                  ✓ Verify & Credit Balance
-                </button>
-                <button onclick="app.adminRejectDeposit('${d.id}')" class="px-3 py-2 rounded-xl bg-red-600/20 text-red-400 hover:bg-red-600/30 font-bold text-[11px] transition">
-                  ✕ Reject
-                </button>
-              </div>
-            ` : ''}
-          </div>
-        `).join('');
-      } else {
-        if (withdrawals.length === 0) {
-          contentEl.innerHTML = `<div class="text-center py-6 text-slate-400">No withdrawal requests yet.</div>`;
-          return;
-        }
-
-        contentEl.innerHTML = withdrawals.map(w => `
-          <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 space-y-2">
-            <div class="flex justify-between items-start">
-              <div>
-                <p class="font-bold text-red-400 text-sm">-${w.amount} ETB</p>
-                <p class="text-[10px] text-slate-400">User: ${w.user_phone}</p>
-                <p class="text-[10px] text-amber-400">Pay to: ${w.payment_method.toUpperCase()} (${w.account_number})</p>
-                <p class="text-[10px] text-slate-300">Name: ${w.account_holder_name}</p>
-              </div>
-              <span class="status-${w.status} text-[9px] px-2 py-0.5 rounded-full capitalize font-bold">
-                ${w.status}
-              </span>
-            </div>
-
-            ${w.status === 'pending' ? `
-              <div class="flex space-x-2 pt-1">
-                <button onclick="app.adminApproveWithdrawal('${w.id}')" class="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] transition">
-                  ✓ Mark Paid & Approved
-                </button>
-                <button onclick="app.adminRejectWithdrawal('${w.id}')" class="px-3 py-2 rounded-xl bg-red-600/20 text-red-400 hover:bg-red-600/30 font-bold text-[11px] transition">
-                  ✕ Reject & Refund
-                </button>
-              </div>
-            ` : ''}
-          </div>
-        `).join('');
-      }
-    } catch (err) {
-      contentEl.innerHTML = `<div class="text-center py-6 text-red-400 text-xs">Error: ${err.message}</div>`;
-    }
-  }
-
-  async adminApproveDeposit(id) {
-    try {
-      await window.dataService.approveDeposit(id);
-      this.showToast("Deposit approved and balance credited!", 'success');
-      this.refreshAdminPanel();
-      this.refreshUserData();
-    } catch (err) {
-      this.showToast(err.message, 'error');
-    }
-  }
-
-  async adminRejectDeposit(id) {
-    try {
-      await window.dataService.rejectDeposit(id, 'Admin rejected after manual verification');
-      this.showToast("Deposit rejected.", 'info');
-      this.refreshAdminPanel();
-    } catch (err) {
-      this.showToast(err.message, 'error');
-    }
-  }
-
-  async adminApproveWithdrawal(id) {
-    try {
-      await window.dataService.approveWithdrawal(id);
-      this.showToast("Withdrawal marked as approved & sent!", 'success');
-      this.refreshAdminPanel();
-    } catch (err) {
-      this.showToast(err.message, 'error');
-    }
-  }
-
-  async adminRejectWithdrawal(id) {
-    try {
-      await window.dataService.rejectWithdrawal(id, 'Mismatched account holder name');
-      this.showToast("Withdrawal rejected and balance refunded to user.", 'info');
-      this.refreshAdminPanel();
-      this.refreshUserData();
-    } catch (err) {
-      this.showToast(err.message, 'error');
-    }
   }
 
   // ----------------------------------------------------------------------------
@@ -1127,5 +1039,6 @@ class EthioMercatoApp {
   }
 }
 
-// Global production app instance
-window.app = new EthioMercatoApp();
+// Instantiate global app
+window.app = new EthioMercatoApplication();
+
